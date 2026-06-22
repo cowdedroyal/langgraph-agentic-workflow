@@ -1,0 +1,7 @@
+# P7 serving stack. vLLM pins a specific torch build, so install this LAST and, if it
+# conflicts with the training stack, in a dedicated environment.
+#   pip install -r requirements-serve.txt
+#
+vllm>=0.6
+langchain-openai>=0.2   # LangGraph -> vLLM OpenAI-compatible endpoint
+openai>=1.40

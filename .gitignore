@@ -1,0 +1,25 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+.pytest_cache/
+
+# Env & local
+.env
+_diag.txt
+
+# Generated data (reproduce with `make corpus` / `make index`)
+data/raw/
+data/corpus/
+data/qa/
+data/train/
+data/index/
+data/facts.json
+
+# Run artifacts (training adapters, benchmark/serve logs & metrics)
+outputs/
+*.log
+
+# Legacy cache
+agentic-exp/

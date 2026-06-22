@@ -1,0 +1,14 @@
+# P5 (SFT/LoRA) + P6 (GRPO) training stack. Install AFTER the core requirements.
+#
+# torch must match the local CUDA toolkit. On this box (CUDA 12.2, A100) install with:
+#   pip install torch --index-url https://download.pytorch.org/whl/cu121
+# then:
+#   pip install -r requirements-train.txt
+#
+torch>=2.1
+transformers>=4.47      # GRPOTrainer / chat templates
+peft>=0.13              # LoRA / QLoRA adapters
+trl>=0.14               # SFTTrainer + GRPOTrainer
+accelerate>=1.0         # multi-GPU / FSDP launch (P8)
+datasets>=2.20
+bitsandbytes>=0.43      # 4-bit QLoRA for the 7B base

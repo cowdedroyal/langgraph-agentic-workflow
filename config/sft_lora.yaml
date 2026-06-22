@@ -1,0 +1,30 @@
+# P5 LoRA SFT config (trl + peft). Smoke default = Qwen2.5-0.5B-Instruct (fast).
+# Uncomment the 7B/QLoRA block below for a full run on the local A100.
+base_model: Qwen/Qwen2.5-0.5B-Instruct
+sharegpt_path: data/train/sft_sharegpt.jsonl
+output_dir: outputs/sft_lora_qwen0.5b
+
+max_seq_length: 1024
+lora_r: 16
+lora_alpha: 32
+lora_dropout: 0.05
+target_modules: [q_proj, k_proj, v_proj, o_proj, gate_proj, up_proj, down_proj]
+
+per_device_batch: 2
+grad_accum: 4
+learning_rate: 2.0e-4
+max_steps: 60
+logging_steps: 5
+bf16: true
+load_in_4bit: false
+gradient_checkpointing: false
+eval_samples: 8
+
+# --- Full-scale alternative: local Qwen2.5-7B base with 4-bit QLoRA ---
+# base_model: Qwen/Qwen2.5-7B
+# output_dir: outputs/sft_lora_qwen7b
+# load_in_4bit: true
+# per_device_batch: 1
+# grad_accum: 8
+# max_steps: 300
+# gradient_checkpointing: true
