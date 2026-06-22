@@ -1,0 +1,26 @@
+# P8: Accelerate + FSDP config for multi-GPU (2×A100) full-shard training.
+# Run a full 7B SFT across both GPUs:
+#   accelerate launch --config_file config/accelerate_fsdp.yaml \
+#       training/sft_lora.py --config config/sft_lora.yaml --base_model Qwen/Qwen2.5-7B
+# (training/sft_lora.py detects WORLD_SIZE>1 and lets accelerate place/shard the model.)
+compute_environment: LOCAL_MACHINE
+distributed_type: FSDP
+mixed_precision: bf16
+num_machines: 1
+num_processes: 2
+machine_rank: 0
+rdzv_backend: static
+same_network: true
+use_cpu: false
+downcast_bf16: 'no'
+main_training_function: main
+fsdp_config:
+  fsdp_sharding_strategy: FULL_SHARD
+  fsdp_auto_wrap_policy: TRANSFORMER_BASED_WRAP
+  fsdp_transformer_layer_cls_to_wrap: Qwen2DecoderLayer
+  fsdp_state_dict_type: SHARDED_STATE_DICT
+  fsdp_offload_params: false
+  fsdp_use_orig_params: true
+  fsdp_sync_module_states: true
+  fsdp_cpu_ram_efficient_loading: true
+  fsdp_backward_prefetch: BACKWARD_PRE

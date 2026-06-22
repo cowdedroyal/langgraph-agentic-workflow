@@ -1,0 +1,20 @@
+# P6 GRPO config (trl). Smoke default = Qwen2.5-0.5B-Instruct, ~20 steps.
+base_model: Qwen/Qwen2.5-0.5B-Instruct
+output_dir: outputs/grpo_qwen0.5b
+target_modules: [q_proj, k_proj, v_proj, o_proj, gate_proj, up_proj, down_proj]
+lora_r: 16
+lora_alpha: 32
+
+n_samples: 24            # number of QA prompts used for rollouts
+num_generations: 4       # group size G (completions per prompt)
+per_device_batch: 4      # must be divisible by num_generations -> 1 prompt x 4 gens / step
+grad_accum: 2
+max_prompt_length: 512
+max_completion_length: 128
+learning_rate: 1.0e-5
+max_steps: 20
+logging_steps: 2
+temperature: 0.9
+beta: 0.04               # KL coefficient
+bf16: true
+eval_samples: 8

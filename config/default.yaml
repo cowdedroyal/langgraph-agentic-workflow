@@ -1,0 +1,38 @@
+# Reference configuration — documents the defaults defined in
+# src/agentic_rag/config.py. Runtime values are read from environment variables
+# (see .env.example); edit those to override. This file is a human-readable mirror.
+
+llm:
+  backend: ollama          # ollama | vllm | openai
+  local_llm: qwen2.5:0.5b  # smoke default present on this box; prod -> qwen2.5:7b / qwen3:30b
+  ollama_base_url: http://localhost:11434
+  ollama_num_predict: 512
+  ollama_json_num_predict: 256
+  vllm_base_url: http://127.0.0.1:8000/v1
+  vllm_model: Qwen/Qwen2.5-7B-Instruct
+  temperature: 0.0
+  request_timeout: 120
+
+embeddings:
+  backend: bge             # bge | nomic | hashing
+  bge_model_name: BAAI/bge-base-zh-v1.5
+  device: auto             # auto | cuda | cpu
+  batch_size: 32
+  hashing_features: 2048
+
+retrieval:
+  topk: 5                  # final number of docs handed to the generator
+  dense_topk: 20           # candidates from FAISS before fusion
+  bm25_topk: 20            # candidates from BM25 before fusion
+  rrf_k: 60                # Reciprocal Rank Fusion constant
+  use_reranker: false
+  reranker_model: BAAI/bge-reranker-base
+  reranker_topk: 5
+
+graph:
+  max_retries: 3
+  recursion_limit: 50
+  enable_web_search: false
+
+run:
+  examples_to_run: 3

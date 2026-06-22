@@ -1,0 +1,49 @@
+# Production-scale GRPO via veRL (roadmap P6 names this framework).
+# Reference config — run after `pip install verl` and exporting a parquet dataset
+# (prompt/answer/evidence) from data/qa/multihop_qa.jsonl:
+#   python -m verl.trainer.main_ppo --config-path=$(pwd)/config --config-name=verl_grpo
+# The reward mirrors training/rewards.py (correctness + citation + format - hallucination),
+# wired through verl's custom_reward_function.
+
+data:
+  train_files: data/train/grpo.parquet
+  val_files: data/train/grpo.parquet
+  prompt_key: prompt
+  max_prompt_length: 640
+  max_response_length: 160
+  train_batch_size: 32
+
+algorithm:
+  adv_estimator: grpo          # group-relative advantage estimation (GRPO)
+  kl_ctrl:
+    kl_coef: 0.04
+
+actor_rollout_ref:
+  model:
+    path: Qwen/Qwen2.5-7B-Instruct
+  actor:
+    optim:
+      lr: 1.0e-6
+    ppo_mini_batch_size: 16
+    use_kl_loss: true
+  rollout:
+    name: vllm                 # veRL drives rollouts through vLLM (ties into P7)
+    n: 8                       # group size (rollouts per prompt)
+    gpu_memory_utilization: 0.5
+    tensor_model_parallel_size: 1
+  ref:
+    log_prob_micro_batch_size: 8
+
+reward_model:
+  enable: false                # use the rule-based reward below, not a learned RM
+custom_reward_function:
+  path: training/rewards.py
+  name: reward_answer_correctness
+
+trainer:
+  total_epochs: 1
+  n_gpus_per_node: 2
+  nnodes: 1
+  save_freq: 50
+  project_name: agentic-rag-finance
+  experiment_name: grpo_qwen7b
