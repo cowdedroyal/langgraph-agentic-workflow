@@ -1,0 +1,191 @@
+# 这个项目的证据化清单：每项内容都指向仓库里的证据。校验：profile-atlas check .
+schema: portfolio/project@1
+id: langgraph-agentic-workflow
+title: 金融多跳问答 Agentic RAG
+title_en: Agentic RAG for multi-hop financial QA
+kind: personal
+role: solo
+period: {start: "2026-05", end: "2026-06"}
+visibility: public
+
+summary: 面向金融年报研报的可自纠错、可评测、可后训练的本地 Agentic RAG 系统
+problem: >-
+  金融问答要在多份长文档之间多跳推理（跨年度、跨上下游主体）。单路检索对“公司加年份”这类实体加数字查询召回不全，
+  多跳证据很难同时命中；生成容易幻觉且不引用证据；也缺少能闭环到训练的评测。
+
+techs:
+  - slug: retrieval-augmented-generation
+    depth: core
+  - slug: dense-retrieval
+    depth: used
+    note: FAISS + bge-base-zh
+  - slug: bm25
+    depth: used
+    note: jieba 分词
+    proposed: {name: BM25, name_zh: BM25 稀疏检索, kind: method}
+  - slug: reciprocal-rank-fusion
+    depth: core
+    note: 稠密与稀疏结果按排名融合
+    proposed: {name: Reciprocal Rank Fusion, name_zh: 倒数排名融合, kind: method}
+  - slug: cross-encoder-reranking
+    depth: used
+    note: 消融里证明它在多跳上有害
+    proposed: {name: Cross-Encoder Reranking, name_zh: 交叉编码器重排, kind: method}
+  - slug: self-rag
+    depth: used
+    note: 检索评分加生成评分的自纠错闭环
+  - slug: llm-as-a-judge
+    depth: used
+  - slug: langgraph
+    depth: core
+    proposed: {name: LangGraph, kind: system}
+  - slug: lora
+    depth: used
+  - slug: group-relative-policy-optimization
+    depth: used
+  - slug: vllm
+    depth: used
+
+contributions:
+  - what: 用 RRF 融合 FAISS 稠密检索和 BM25 稀疏检索，替换 LangGraph 基线里的单路向量库
+    why: 多跳问题的两跳证据分别靠语义和年份、实体 token 命中，单路检索总会漏一跳
+    techs: [reciprocal-rank-fusion, dense-retrieval, bm25, langgraph]
+    evidence: [rrf-code, hybrid-code]
+  - what: 搭建 route、retrieve、grade_documents、generate、grade_generation 自纠错图
+    why: 对幻觉和答非所问分别回退到重生成或补检索
+    techs: [langgraph, self-rag, llm-as-a-judge]
+    evidence: [graph-code]
+  - what: 按结构化 facts 精确计算答案来合成 51 条可追溯的多跳 QA
+    why: 用 LLM 生成标准答案会把幻觉带进评测集，检索和引用指标就不可信了
+    techs: [retrieval-augmented-generation]
+    evidence: [qa-readme, results]
+  - what: GRPO 奖励直接复用评测指标（正确性、引用、格式、无幻觉）
+    why: 让评测和训练用同一把尺子，评测发现的问题能直接变成训练信号
+    techs: [group-relative-policy-optimization]
+    evidence: [rewards-code]
+
+decisions:
+  - choice: 用 RRF 按排名融合，而不是按分数加权
+    why: 余弦相似度和 BM25 分数量纲完全不同，按排名融合不需要调权重也不需要归一化
+    alternatives: [分数线性加权, 只用稠密检索]
+    evidence: [rrf-code]
+  - choice: 有元数据过滤时先扩大初检广度再过滤
+    why: 小 topk 先检索再过滤，会把符合条件的相关文档提前丢掉
+    alternatives: [先检索 topk 再过滤]
+    evidence: [filter-code]
+
+findings:
+  - claim: 稠密单路在多跳全链命中上是 0：跨年财务表语义高度相似，两跳证据无法同时召回，靠 BM25 的年份和实体 token 互补
+    kind: insight
+    evidence: [results]
+  - claim: 朴素 cross-encoder 重排在多跳上反而有害，会把间接相关的第二跳证据挤出 top-k
+    kind: negative
+    evidence: [results]
+  - claim: vLLM 的 guided decoding（xgrammar）会让 execute_model 崩溃，改成 prompt 约束加容错解析
+    kind: pitfall
+    evidence: [pitfall-code]
+
+metrics:
+  - name: Recall@5
+    value: 0.569
+    baseline: {value: 0.441, label: 稠密单路（FAISS）}
+    setting: 51 条合成多跳 QA，bge-base-zh
+    scale: pilot
+    evidence: [results-hybrid, results-dense]
+  - name: 多跳全链 Hit@5
+    value: 0.255
+    baseline: {value: 0.0, label: 稠密单路}
+    setting: 51 条合成多跳 QA，完整证据链都进 top-5 才算命中
+    scale: pilot
+    evidence: [results-hybrid, results-dense]
+  - name: 重排后 Hit@5
+    value: 0.078
+    baseline: {value: 0.255, label: 不重排的 RRF}
+    setting: bge-reranker-base，同一 51 条 QA
+    scale: pilot
+    evidence: [results-reranker, results-hybrid]
+  - name: 端到端答案准确率
+    value: 0.68
+    setting: Qwen2.5-7B-Instruct on vLLM，n=10
+    scale: smoke
+    evidence: [results-e2e]
+  - name: LoRA SFT 答案准确率
+    value: 0.900
+    baseline: {value: 0.825, label: SFT 前}
+    setting: Qwen2.5-0.5B，in-domain
+    scale: smoke
+    evidence: [sft-readme]
+  - name: vLLM 吞吐 QPS@16
+    value: 7.16
+    setting: A100 单卡，Qwen2.5-7B-Instruct
+    scale: pilot
+    evidence: [serve-readme]
+
+evidence:
+  - id: rrf-code
+    type: file
+    path: src/agentic_rag/retrieval/base.py
+    quote:
+      - "def rrf_fuse("
+      - "Rank-based, so the very different score scales of dense (cosine) and BM25 (tf-idf) combine cleanly."
+  - id: hybrid-code
+    type: file
+    path: src/agentic_rag/retrieval/hybrid.py
+    quote: ["fused = rrf_fuse([dense_hits, bm25_hits], k=s.rrf_k)"]
+  - id: filter-code
+    type: file
+    path: src/agentic_rag/retrieval/hybrid.py
+    quote: ["When a metadata filter is active, probe wider so filtering does not discard"]
+  - id: rewards-code
+    type: file
+    path: training/rewards.py
+    quote:
+      - "reuse the P4 evaluation signals as rewards"
+      - "ALL_REWARDS = [reward_answer_correctness, reward_citation, reward_format, reward_no_hallucination]"
+  - id: graph-code
+    type: file
+    path: src/agentic_rag/graph/build.py
+    quote:
+      - "wf.add_conditional_edges( \"generate\", partial(grade_generation_v_documents_and_question, ctx=ctx),"
+      - "{\"__end__\": END, \"generate\": \"generate\", \"web_search_node\": \"web_search_node\"},"
+  - id: qa-readme
+    type: file
+    path: README.md
+    quote: ["答案由结构化 facts **精确计算**（非 LLM 生成，保证 ground truth）"]
+  - id: results
+    type: file
+    path: docs/results.md
+    quote: ["a naive cross-encoder reranker *hurts* multi-hop retrieval here"]
+  - id: results-dense
+    type: file
+    path: docs/results.md
+    quote: ["| Dense (FAISS · bge-zh) | 0.4412 | 0.6569 | 0.4530 | 0.3386 | 0.0000 |"]
+  - id: results-hybrid
+    type: file
+    path: docs/results.md
+    quote: ["| Hybrid (RRF) | 0.5686 | 0.7843 | 0.5957 | 0.4689 | 0.2549 |"]
+  - id: results-reranker
+    type: file
+    path: docs/results.md
+    quote: ["| Hybrid + Reranker (bge-reranker-base) | 0.3039 | 0.7451 | 0.2621 | 0.1984 | 0.0784 |"]
+  - id: results-e2e
+    type: file
+    path: docs/results.md
+    quote: ["| 10 | 0.6800 | 0.9500 | 1.2000 | 6.8670 | 0.7000 | 0.8000 |"]
+  - id: sft-readme
+    type: file
+    path: README.md
+    quote: ["in-domain 答案准确率 **0.825 → 0.900（+7.5pct）**"]
+  - id: serve-readme
+    type: file
+    path: README.md
+    quote: ["吞吐 **QPS@16 = 7.16**"]
+  - id: pitfall-code
+    type: file
+    path: src/agentic_rag/llm.py
+    quote:
+      - "vLLM 0.6.6 guided-decoding (xgrammar) for response_format is unstable and can crash"
+      - "def parse_json(content: str) -> dict:"
+
+links:
+  repo: https://github.com/cowdedroyal/langgraph-agentic-workflow
