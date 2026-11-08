@@ -7,15 +7,19 @@
 
 ---
 
-## 📌 项目概述（STAR）
+## 问题
 
-### Situation｜背景
+### 背景（Situation）
 金融问答常需在**多份长文档**间做**多跳推理**：跨年度（“2023 营收较 2021 增长多少”）、跨主体（“某公司的供应商去年净利润”）、指标趋势（“毛利率三年走势”）。通用单轮 RAG 有三大痛点：① 单路检索（纯向量或纯关键词）对“公司＋年份”这类**实体＋数字**查询召回不全，多跳证据难以同时命中；② 生成易**幻觉**、不引用证据；③ 缺乏闭环评测与领域模型优化手段，且金融场景常要求**本地化部署**。
 
-### Task｜目标
+### 目标（Task）
 构建一个本地可复现的金融 Agentic RAG 系统：检索做**多路融合**提升多跳召回；生成具备**幻觉检测＋自纠错**闭环；建立**可量化评测**体系；并打通 **LoRA/GRPO 后训练**与 **vLLM/Ray/FSDP** 服务化与并行调度。
 
-### Action｜技术选型与难点攻克
+---
+
+## 方案
+
+### 技术选型与难点攻克（Action）
 - **数据层（P1）**：合成 6 家虚构上市公司 × 3 年度 × 3 类文书（年报/公告/研报），内置**上下游供应链**关系以支撑多跳；多格式解析（MD/HTML/TXT，stdlib 零额外依赖）＋ 财务表格保真分块；统一 `Document` JSONL 供稠密/稀疏检索共用。
 - **混合检索（P2，核心）**：FAISS（bge-zh 稠密）＋ BM25（jieba 稀疏）经 **RRF 融合** ＋ 元数据过滤 ＋ 可选 cross-encoder 重排；以 `HybridRetriever.invoke()` **保持 LangGraph 节点接口不变**，仅替换实现。
 - **自纠错图**：LangGraph `route → retrieve → grade_documents → generate → grade_generation` 闭环，幻觉与答案**双重 LLM-Judge**，未通过按 `max_retries` 重生成/补检索。
@@ -24,12 +28,40 @@
 - **训练全链路（P5/P6）**：trl＋peft **LoRA SFT**（证据引用式回答 ＋ JSON 路由稳定性）；**GRPO** 后训练，奖励**复用 P4 评测指标**（正确性＋引用＋格式−幻觉），形成“评测→训练”闭环；并提供 **LLaMA-Factory / veRL** 生产档配置。
 - **服务与调度（P7/P8）**：**vLLM** 起 OpenAI 兼容服务，LLM 后端经 `LLM_BACKEND` 一键切换 Ollama/vLLM；**Ray** 并行 ingestion/评测；**FSDP** 2×A100 多卡训练。
 
-### Result｜量化成果
-见下方「核心结果」，均为本机 2×A100 真实跑出（`docs/results.md` 与 `outputs/*.json` 为产物）。
+### 架构
+
+自纠错工作流（保留基线闭环，仅替换检索实现）：
+
+```mermaid
+flowchart TD
+    Q([用户问题]) --> ROUTE{route_question}
+    ROUTE -->|金融/向量库| RET["retrieve · HybridRetriever<br/>FAISS+BM25+RRF"]
+    ROUTE -->|实时/新闻| WEB[web_search]
+    RET --> GD[grade_documents]
+    GD -->|有相关文档| GEN[generate]
+    GD -->|不相关| WEB
+    WEB --> GEN
+    GEN --> GG{grade_generation<br/>幻觉 + 答案 双判}
+    GG -->|存在幻觉| GEN
+    GG -->|未回答问题| WEB
+    GG -->|有据且切题| DONE([END])
+```
+
+完整系统架构、模块映射与一致性设计见 **[docs/architecture.md](docs/architecture.md)**；完整指标见 **[docs/results.md](docs/results.md)**。
+
+### 工程难点与解法（真实踩坑）
+
+- **vLLM 在本机的多重坑**：① 启动联网校验 HF（SSL EOF）反复重试 → `HF_HUB_OFFLINE=1` 走本地缓存；② `gpu_memory_utilization=0.5` 在被占用的卡上算出 **KV cache 负值 OOM** → 选空闲卡 + util 0.9；③ `response_format` 的 **guided-decoding(xgrammar) 崩溃 `execute_model`** → JSON 不依赖原生约束，改“prompt 指令 + `parse_json` 容错”；④ **langchain-openai 1.x 自定义 TCP keepalive + 本机 SOCKS 代理**导致连不上 localhost → 禁 keepalive + 自动把 localhost 加入 `NO_PROXY` + 显式 `127.0.0.1`。
+- **混合检索元数据过滤截断**：小 topk 初检后再过滤会丢掉符合条件的相关文档 → 检测到 filter 时**扩大初检广度**再过滤。
+- **多跳 ground truth 可靠性**：QA 答案由结构化 facts **精确计算**而非 LLM 生成，evidence 可追溯到具体 chunk，使检索/引用指标可信。
+- **依赖兼容性**：新版 transformers 在 import 期引用 `torch.float8_e8m0fnu`（torch 2.5 无）→ 锁定 **transformers 4.47.1 + sentence-transformers 3.4.1 + torch 2.5.1**，并分层 `requirements*.txt` 隔离 RAG/训练/服务依赖。
+- **LangChain 1.x 适配**：Tavily 迁移到 `langchain-tavily`，向量库由 `SKLearnVectorStore` 整体替换为自研 FAISS+BM25，节点接口零改动。
 
 ---
 
-## 📊 核心结果
+## 结果
+
+见下方「核心结果」，均为本机 2×A100 真实跑出（`docs/results.md` 与 `outputs/*.json` 为产物）。
 
 ### 1) 混合检索：多跳召回显著优于单路（51 条多跳 QA）
 | 方法 | Recall@5 | Recall@10 | MRR | nDCG@5 | 多跳全链 Hit@5 |
@@ -61,32 +93,29 @@
 - **Ray** 并行评测：51 QA / 2 worker，wall **13.12s**，指标与串行完全一致
 - **FSDP** 2×A100 多卡 SFT：8 步 loss 0.954、runtime 41.6s（验证多卡训练通路）
 
----
+### Roadmap 对照（P0–P8 全部落地）
 
-## 🏗️ 架构
+| 阶段 | 内容 | 状态 | 关键产物 |
+|---|---|---|---|
+| P0 | 稳定运行层（统一配置/CLI/smoke test） | ✅ | `config.py`·`cli.py`·`tests/`（14 passed） |
+| P1 | 金融数据 Ingestion | ✅ | 54 raw → 252 chunks |
+| P2 | FAISS+BM25 混合检索 | ✅ | Hybrid Recall@5 0.569 |
+| P3 | 多跳 QA 合成 | ✅ | 51 条可追溯多跳 QA |
+| P4 | Judge 与 Benchmark | ✅ | `docs/results.md` |
+| P5 | LoRA/SFT | ✅ | acc 0.825→0.90 |
+| P6 | GRPO 后训练 | ✅ | reward 2.53→2.79 |
+| P7 | vLLM 推理服务 | ✅ | QPS 7.16 / p50 1.97s |
+| P8 | Ray + FSDP 调度 | ✅ | Ray 评测 13.12s / FSDP 2×A100 |
 
-自纠错工作流（保留基线闭环，仅替换检索实现）：
+> 说明：训练与端到端评测的规模为 **smoke 级**（小语料、小模型、少步数），重在验证**全链路打通与相对提升**；脚本均可切换至 7B/更大步数做完整训练（见 `config/*.yaml` 注释）。
 
-```mermaid
-flowchart TD
-    Q([用户问题]) --> ROUTE{route_question}
-    ROUTE -->|金融/向量库| RET["retrieve · HybridRetriever<br/>FAISS+BM25+RRF"]
-    ROUTE -->|实时/新闻| WEB[web_search]
-    RET --> GD[grade_documents]
-    GD -->|有相关文档| GEN[generate]
-    GD -->|不相关| WEB
-    WEB --> GEN
-    GEN --> GG{grade_generation<br/>幻觉 + 答案 双判}
-    GG -->|存在幻觉| GEN
-    GG -->|未回答问题| WEB
-    GG -->|有据且切题| DONE([END])
-```
-
-完整系统架构、模块映射与一致性设计见 **[docs/architecture.md](docs/architecture.md)**；完整指标见 **[docs/results.md](docs/results.md)**。
+结果文件：检索与端到端评测见 [docs/results.md](docs/results.md)；LoRA SFT、GRPO、vLLM 服务的原始指标文件（`outputs/*.json`）尚未提交，补齐后放进 [docs/metrics/](docs/metrics/)。
 
 ---
 
-## 🚀 快速开始
+## 复现
+
+### 快速开始
 
 ```bash
 # 1) 安装核心 RAG 依赖（建议独立 conda/venv）
@@ -121,9 +150,7 @@ accelerate launch --config_file config/accelerate_fsdp.yaml \
 
 后端可切换：`LLM_BACKEND=ollama|vllm`；嵌入 `EMBEDDINGS_BACKEND=bge|nomic|hashing`（三级兜底，无模型/系统依赖时仍可跑通）。全部运行参数见 `.env.example`。
 
----
-
-## 🗂️ 项目结构
+### 项目结构
 
 ```
 src/agentic_rag/
@@ -143,34 +170,12 @@ cli.py / main.py / Makefile / tests/                # 统一 CLI / 向后兼容�
 
 ---
 
-## 🔧 工程难点与解法（真实踩坑）
+## 证据清单
 
-- **vLLM 在本机的多重坑**：① 启动联网校验 HF（SSL EOF）反复重试 → `HF_HUB_OFFLINE=1` 走本地缓存；② `gpu_memory_utilization=0.5` 在被占用的卡上算出 **KV cache 负值 OOM** → 选空闲卡 + util 0.9；③ `response_format` 的 **guided-decoding(xgrammar) 崩溃 `execute_model`** → JSON 不依赖原生约束，改“prompt 指令 + `parse_json` 容错”；④ **langchain-openai 1.x 自定义 TCP keepalive + 本机 SOCKS 代理**导致连不上 localhost → 禁 keepalive + 自动把 localhost 加入 `NO_PROXY` + 显式 `127.0.0.1`。
-- **混合检索元数据过滤截断**：小 topk 初检后再过滤会丢掉符合条件的相关文档 → 检测到 filter 时**扩大初检广度**再过滤。
-- **多跳 ground truth 可靠性**：QA 答案由结构化 facts **精确计算**而非 LLM 生成，evidence 可追溯到具体 chunk，使检索/引用指标可信。
-- **依赖兼容性**：新版 transformers 在 import 期引用 `torch.float8_e8m0fnu`（torch 2.5 无）→ 锁定 **transformers 4.47.1 + sentence-transformers 3.4.1 + torch 2.5.1**，并分层 `requirements*.txt` 隔离 RAG/训练/服务依赖。
-- **LangChain 1.x 适配**：Tavily 迁移到 `langchain-tavily`，向量库由 `SKLearnVectorStore` 整体替换为自研 FAISS+BM25，节点接口零改动。
+[.portfolio/project.yaml](.portfolio/project.yaml) 记录了这个项目用到的技术、我做的事、关键取舍、实验发现和指标，每一项都指向仓库里的证据（代码、结果表）。
+校验：`profile-atlas check .`
 
 ---
 
-## 🗺️ Roadmap 对照（P0–P8 全部落地）
-
-| 阶段 | 内容 | 状态 | 关键产物 |
-|---|---|---|---|
-| P0 | 稳定运行层（统一配置/CLI/smoke test） | ✅ | `config.py`·`cli.py`·`tests/`（14 passed） |
-| P1 | 金融数据 Ingestion | ✅ | 54 raw → 252 chunks |
-| P2 | FAISS+BM25 混合检索 | ✅ | Hybrid Recall@5 0.569 |
-| P3 | 多跳 QA 合成 | ✅ | 51 条可追溯多跳 QA |
-| P4 | Judge 与 Benchmark | ✅ | `docs/results.md` |
-| P5 | LoRA/SFT | ✅ | acc 0.825→0.90 |
-| P6 | GRPO 后训练 | ✅ | reward 2.53→2.79 |
-| P7 | vLLM 推理服务 | ✅ | QPS 7.16 / p50 1.97s |
-| P8 | Ray + FSDP 调度 | ✅ | Ray 评测 13.12s / FSDP 2×A100 |
-
-> 说明：训练与端到端评测的规模为 **smoke 级**（小语料、小模型、少步数），重在验证**全链路打通与相对提升**；脚本均可切换至 7B/更大步数做完整训练（见 `config/*.yaml` 注释）。
-
----
-
-## 📄 License
-
+## License
 MIT。本项目语料为**合成虚构**数据，公司名/财务数字均非真实，仅用于演示与复现。

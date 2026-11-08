@@ -23,3 +23,5 @@ outputs/
 
 # Legacy cache
 agentic-exp/
+.venv/
+.DS_Store

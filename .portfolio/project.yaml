@@ -184,4 +184,4 @@ evidence:
       - "def parse_json(content: str) -> dict:"
 
 links:
-  repo: https://github.com/cowdedroyal/langgraph-agentic-workflow
+  repo: https://github.com/cowdedroyal-lab/langgraph-agentic-workflow
