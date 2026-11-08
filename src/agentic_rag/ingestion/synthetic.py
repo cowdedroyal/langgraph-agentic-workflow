@@ -95,17 +95,37 @@ SUPPLY_LINKS: list[dict[str, str]] = [
 _BROKERS = ["中信建源", "国泰君平", "华兴证券"]
 
 
+@dataclass
+class World:
+    """A set of companies plus their supply links. The default world is the 6 core
+    companies; ``agentic_rag.access.world`` builds larger worlds with distractors."""
+    companies: list[CompanyProfile]
+    links: list[dict[str, str]]
+
+    def by_ticker(self) -> dict[str, CompanyProfile]:
+        return {p.ticker: p for p in self.companies}
+
+    def suppliers_of(self, ticker: str) -> list[tuple[str, str]]:
+        return [(l["supplier"], l["material"]) for l in self.links if l["customer"] == ticker]
+
+    def customers_of(self, ticker: str) -> list[str]:
+        return [l["customer"] for l in self.links if l["supplier"] == ticker]
+
+
+CORE_WORLD = World(COMPANIES, SUPPLY_LINKS)
+
+
 def by_ticker() -> dict[str, CompanyProfile]:
-    return {p.ticker: p for p in COMPANIES}
+    return CORE_WORLD.by_ticker()
 
 
 def suppliers_of(ticker: str) -> list[tuple[str, str]]:
     """Return (supplier_ticker, material) feeding the given company."""
-    return [(l["supplier"], l["material"]) for l in SUPPLY_LINKS if l["customer"] == ticker]
+    return CORE_WORLD.suppliers_of(ticker)
 
 
 def customers_of(ticker: str) -> list[str]:
-    return [l["customer"] for l in SUPPLY_LINKS if l["supplier"] == ticker]
+    return CORE_WORLD.customers_of(ticker)
 
 
 def compute_financials(p: CompanyProfile) -> dict[int, dict]:
@@ -135,11 +155,12 @@ def _meta_line(meta: dict) -> str:
 # --------------------------------------------------------------------------- #
 # Renderers
 # --------------------------------------------------------------------------- #
-def render_annual_report(p: CompanyProfile, fins: dict[int, dict], year: int) -> str:
+def render_annual_report(p: CompanyProfile, fins: dict[int, dict], year: int,
+                         world: World = CORE_WORLD) -> str:
     f, pf = fins[year], fins[year - 1]
-    bt = by_ticker()
-    sup = "；".join(f"{bt[s].name}（{s}，供应{m}）" for s, m in suppliers_of(p.ticker)) or "无重大依赖的单一供应商"
-    cus = "；".join(bt[c].name for c in customers_of(p.ticker)) or "下游为经销商及终端客户"
+    bt = world.by_ticker()
+    sup = "；".join(f"{bt[s].name}（{s}，供应{m}）" for s, m in world.suppliers_of(p.ticker)) or "无重大依赖的单一供应商"
+    cus = "；".join(bt[c].name for c in world.customers_of(p.ticker)) or "下游为经销商及终端客户"
 
     rows = [
         ("营业收入（亿元）", f["revenue"], pf["revenue"], f"{yoy(f['revenue'], pf['revenue'])}%"),
@@ -203,12 +224,13 @@ def render_announcement(p: CompanyProfile, fins: dict[int, dict], year: int) -> 
     ])
 
 
-def render_research_report(p: CompanyProfile, fins: dict[int, dict], year: int) -> str:
+def render_research_report(p: CompanyProfile, fins: dict[int, dict], year: int,
+                           world: World = CORE_WORLD) -> str:
     f = fins[year]
-    bt = by_ticker()
+    bt = world.by_ticker()
     broker = _BROKERS[(int(p.ticker) + year) % len(_BROKERS)]
-    sup = "、".join(f"{bt[s].name}（{m}）" for s, m in suppliers_of(p.ticker)) or "无"
-    cus = "、".join(bt[c].name for c in customers_of(p.ticker)) or "下游经销商"
+    sup = "、".join(f"{bt[s].name}（{m}）" for s, m in world.suppliers_of(p.ticker)) or "无"
+    cus = "、".join(bt[c].name for c in world.customers_of(p.ticker)) or "下游经销商"
     target = round(f["revenue"] * (0.6 if p.chain == "白酒链" else 0.3), 1)
     meta = dict(company=p.name, ticker=p.ticker, period=str(year), doc_type="research_report",
                 publish_date=f"{year + 1}-04-10", source=f"{p.ticker}_{year}_research_report.txt")

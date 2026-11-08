@@ -25,3 +25,5 @@ outputs/
 agentic-exp/
 .venv/
 .DS_Store
+.venv.nosync/
+.venv
