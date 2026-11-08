@@ -1,6 +1,6 @@
 # 进度记录：访问路径实验（access-paths 分支）
 
-最后更新：2026-11-08。分支 `access-paths` 只在本机提交，**还没有推送**。
+最后更新：2026-11-08。分支 `access-paths` 已推送到 GitHub，还没有合并进 master。
 
 ## 要回答的问题
 
@@ -40,6 +40,21 @@
 
 2026-11-08 晚，规模 180 的 view 建表时 DeepSeek 返回 429。**原因是 API 余额用完，不是限流。** 已停掉所有后台任务。
 到停止时一共 2726 次调用，按列表价约 $0.94。
+
+## 换电脑后的准备
+
+```bash
+git clone https://github.com/cowdedroyal-lab/langgraph-agentic-workflow.git
+cd langgraph-agentic-workflow && git checkout access-paths
+uv venv --python 3.12 .venv && source .venv/bin/activate
+uv pip install rank-bm25 jieba pydantic rich numpy faiss-cpu sentence-transformers python-dotenv pytest langchain-core
+python -m pytest -q tests/test_access.py      # 6 个离线测试，应全部通过
+```
+
+- LLM 接口：默认走本机 magpie（`http://127.0.0.1:3425/v1`，key 随便填）。没有 magpie 就设置
+  `ACCESS_BASE_URL=https://api.deepseek.com/v1`、`ACCESS_API_KEY=<DeepSeek key>`、`ACCESS_MODEL=deepseek-v4-flash`（模型名以接口实际返回为准）。
+- 嵌入模型：第一次跑 index 路径会下载 `BAAI/bge-base-zh-v1.5`（约 400 MB）。连不上 HuggingFace 时设置 `HF_ENDPOINT=https://hf-mirror.com`。
+- 缓存不在仓库里（`outputs/` 被 gitignore）。新电脑上已完成的调用要重跑一遍，约 $1；结果会和这里的数字略有出入（同一模型、temperature 0，但不保证逐字一致）。
 
 ## 明天接着做
 
