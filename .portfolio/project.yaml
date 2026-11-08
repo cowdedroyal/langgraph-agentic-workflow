@@ -22,15 +22,12 @@ techs:
   - slug: bm25
     depth: used
     note: jieba 分词
-    proposed: {name: BM25, name_zh: BM25 稀疏检索, kind: method}
   - slug: reciprocal-rank-fusion
     depth: core
     note: 稠密与稀疏结果按排名融合
-    proposed: {name: Reciprocal Rank Fusion, name_zh: 倒数排名融合, kind: method}
   - slug: cross-encoder-reranking
     depth: used
     note: 消融里证明它在多跳上有害
-    proposed: {name: Cross-Encoder Reranking, name_zh: 交叉编码器重排, kind: method}
   - slug: self-rag
     depth: used
     note: 检索评分加生成评分的自纠错闭环
@@ -38,7 +35,6 @@ techs:
     depth: used
   - slug: langgraph
     depth: core
-    proposed: {name: LangGraph, kind: system}
   - slug: lora
     depth: used
   - slug: group-relative-policy-optimization
