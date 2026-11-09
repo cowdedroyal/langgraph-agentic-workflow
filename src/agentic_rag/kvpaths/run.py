@@ -27,11 +27,12 @@ from ..access.questions import build_questions
 from ..access.retrieval import DocSearch
 from ..access.world import build_world, render_corpus
 from .engine import KVEngine
-from .questions import build_pairs, pair_id
+from .grading import grade_lenient
+from .questions import PAIR_SETS, build_pairs, link_id, pair_id
 
 PREFIX = "<|im_start|>system\n你是金融分析助手。下面是完整的资料库，只能依据资料回答。" + ANSWER_RULE + "\n\n"
 SUFFIX = "<|im_end|>\n"
-POLICIES = ["full", "window", "keydiff", "keydiff_block", "query", "join", "join_key", "oracle"]
+POLICIES = ["full", "window", "keydiff", "keydiff_block", "query", "join", "join_key", "oracle", "oracle_aware"]
 _DIGITS = re.compile(r"[0-9０-９][0-9０-９.,%]*")
 
 
@@ -78,19 +79,27 @@ def answer_mask(eng: KVEngine, q, tgt_docs, spans, texts):
 
 def rec(q, g, policy, budget, recall=None):
     ans = parse_answer(g.text)
+    lans, lok = grade_lenient(q, g.text)
     ev, an = recall if recall is not None else (None, None)
     return {"policy": policy, "budget": budget, "answer": ans, "correct": grade(q, ans),
+            "answer_lenient": lans, "correct_lenient": lok,
             "ev_recall": None if ev is None else round(ev, 4), "ans_recall": None if an is None else round(an, 4),
             "kept_frac": round(g.kept_frac, 4), "gen_tokens": g.n_tokens, "gen_s": round(g.seconds, 3),
             "text_tail": g.text[-300:]}
 
 
+def select_questions(sw, args):
+    """Original questions (optionally only some hop types) + one pair set."""
+    orig = [] if args.only_pairs else [q for q in build_questions(sw)
+                                       if not args.hop_types or q.hop_type in args.hop_types]
+    pairs = [] if args.no_pairs else build_pairs(sw, pair_set=args.pair_set)
+    return orig + pairs
+
+
 def run_size(eng: KVEngine, size: int, args, out_dir: Path) -> None:
     sw = build_world(size)
     docs = render_corpus(sw)
-    qs = build_questions(sw) + build_pairs(sw)
-    if args.only_pairs:
-        qs = [q for q in qs if pair_id(q.qid)]
+    qs = select_questions(sw, args)
     if args.limit:
         qs = qs[: args.limit]
     ctx_ids, spans, protect, texts = build_context(eng, docs)
@@ -114,10 +123,12 @@ def run_size(eng: KVEngine, size: int, args, out_dir: Path) -> None:
     (d / "meta.json").write_text(json.dumps(meta, indent=1))
 
     budgets = args.budgets
-    kd = eng.keydiff_scores()
-    sel_keydiff = {b: eng.select_topk(kd, b) for b in budgets}
+    sel_keydiff = {}
+    if "keydiff" in args.policies:
+        kd = eng.keydiff_scores()
+        sel_keydiff = {b: eng.select_topk(kd, b) for b in budgets}
+        del kd
     sel_window = {b: eng.select_window(b) for b in budgets}
-    del kd
     sel_kdblock = {}
     if "keydiff_block" in args.policies:
         tk = time.time()
@@ -177,6 +188,11 @@ def run_size(eng: KVEngine, size: int, args, out_dir: Path) -> None:
             if "oracle" in args.policies:
                 runs.append(rec(q, eng.answer_agnostic(eng.select_spans([spans[i] for i in ev]), q_ids,
                                                        args.max_new), "oracle", None))
+            if "oracle_aware" in args.policies:
+                # the upper bound for query-aware policies: same decoding mode as query/join (question
+                # KV computed over the full context), but only the gold evidence documents are kept
+                so = eng.select_spans([spans[i] for i in ev])
+                runs.append(rec(q, eng.answer_aware(so, q_ids, q_win, args.max_new), "oracle_aware", None, R(so)))
             analysis = None
             if pair_id(q.qid):                       # where does the second hop rank, per layer?
                 tgt = tgt_docs
@@ -203,9 +219,7 @@ def recall_only(eng: KVEngine, size: int, args, out_dir: Path) -> None:
     per question. Written to <out>/<tag>/<size>/recall.jsonl."""
     sw = build_world(size)
     docs = render_corpus(sw)
-    qs = build_questions(sw) + build_pairs(sw)
-    if args.only_pairs:
-        qs = [q for q in qs if pair_id(q.qid)]
+    qs = select_questions(sw, args)
     ctx_ids, spans, protect, texts = build_context(eng, docs)
     d = out_dir / str(size)
     d.mkdir(parents=True, exist_ok=True)
@@ -216,7 +230,8 @@ def recall_only(eng: KVEngine, size: int, args, out_dir: Path) -> None:
     kd = eng.keydiff_scores()
     sels = {("window", b): eng.select_window(b) for b in args.budgets}
     sels.update({("keydiff", b): eng.select_topk(kd, b) for b in args.budgets})
-    sels.update({("keydiff_block", b): eng.select_keydiff_block(b) for b in args.budgets})
+    if "keydiff_block" in args.policies:
+        sels.update({("keydiff_block", b): eng.select_keydiff_block(b) for b in args.budgets})
     del kd
     with (d / "recall.jsonl").open("w") as f:
         for q in qs:
@@ -235,16 +250,26 @@ def recall_only(eng: KVEngine, size: int, args, out_dir: Path) -> None:
     print(f"=== recall size={size} questions={len(qs)} -> {d / 'recall.jsonl'}", flush=True)
 
 
-def bootstrap_gap(pairs: list[tuple[int, int]], n: int = 4000, seed: int = 0):
-    """Mean of (lookup - join) correctness over pairs, with a 95% paired-bootstrap interval."""
+def bootstrap_gap(pairs: list[tuple[str, float]], n: int = 4000, seed: int = 0):
+    """Mean of per-pair differences (e.g. lookup - join correctness) with a 95% interval from a
+    cluster bootstrap: whole supply links are resampled, because both years (and every metric)
+    of one link share the same two documents and are not independent."""
     if not pairs:
         return None
+    by: dict[str, list[float]] = defaultdict(list)
+    for cl, d in pairs:
+        by[cl].append(d)
+    clusters = list(by.values())
+    m = sum(d for _, d in pairs) / len(pairs)
     rng = random.Random(seed)
-    diffs = [l - j for j, l in pairs]
-    m = sum(diffs) / len(diffs)
-    bs = sorted(sum(rng.choice(diffs) for _ in diffs) / len(diffs) for _ in range(n))
+    bs = []
+    for _ in range(n):
+        pick = [rng.choice(clusters) for _ in clusters]
+        flat = [d for c in pick for d in c]
+        bs.append(sum(flat) / len(flat))
+    bs.sort()
     return {"gap": round(m, 4), "lo": round(bs[int(0.025 * n)], 4), "hi": round(bs[int(0.975 * n)], 4),
-            "n_pairs": len(diffs)}
+            "n_pairs": len(pairs), "n_links": len(clusters)}
 
 
 def error_kind(gold, answer) -> str:
@@ -262,47 +287,86 @@ def error_kind(gold, answer) -> str:
     return "far"
 
 
+def _questions_by_id(size: int) -> dict:
+    sw = build_world(size)
+    qs = build_questions(sw)
+    for ps in PAIR_SETS:
+        qs += build_pairs(sw, pair_set=ps)
+    return {q.qid: q for q in qs}
+
+
+def _lenient(x: dict, q) -> tuple[object, bool]:
+    """Records written before lenient grading existed are re-graded from their text tail."""
+    if "correct_lenient" in x:
+        return x["answer_lenient"], bool(x["correct_lenient"])
+    return grade_lenient(q, x.get("text_tail", "")) if q is not None else (x["answer"], bool(x["correct"]))
+
+
+def _mean(v):
+    return round(sum(v) / len(v), 4) if v else None
+
+
 def summarize(out_dir: Path) -> dict:
+    """Primary metric = lenient correctness (see ``grading``); strict JSON correctness is kept as
+    ``*_strict``. ``did_vs_full`` = per-pair (lookup - join) under the policy minus the same pair's
+    (lookup - join) with the full KV: the join cost added by compression, net of the model's own
+    long-context join errors."""
     summary = {}
-    for d in sorted((p for p in out_dir.iterdir() if p.is_dir()), key=lambda p: int(p.name)):
+    for d in sorted((p for p in out_dir.iterdir() if p.is_dir() and p.name.isdigit()), key=lambda p: int(p.name)):
+        if not (d / "records.jsonl").exists():
+            continue
         rows = [json.loads(l) for l in (d / "records.jsonl").read_text().splitlines() if l.strip()]
         meta = json.loads((d / "meta.json").read_text()) if (d / "meta.json").exists() else {}
-        cells: dict[str, dict] = {}
+        qmap = _questions_by_id(int(d.name))
         by = defaultdict(list)
         for r in rows:
             for x in r["runs"]:
-                by[(x["policy"], x["budget"])].append((r, x))
-        for (pol, b), lst in sorted(by.items(), key=lambda kv: (POLICIES.index(kv[0][0]), -(kv[0][1] or 0))):
-            hop = defaultdict(list)
-            for r, x in lst:
-                hop[r["hop_type"]].append(x["correct"])
-            pj = {}
-            for r, x in lst:
+                la, lok = _lenient(x, qmap.get(r["qid"]))
+                by[(x["policy"], x["budget"])].append((r, x, la, lok))
+        # per-pair (lookup - join) under the full KV, for the difference-in-differences
+        full_gap = {}
+        for r, x, la, lok in by.get(("full", 1.0), []):
+            if r["pair"]:
+                full_gap.setdefault(r["pair"], {})[r["hop_type"]] = int(lok)
+        cells: dict[str, dict] = {}
+        order = lambda kv: (POLICIES.index(kv[0][0]) if kv[0][0] in POLICIES else 99, -(kv[0][1] or 0))
+        for (pol, b), lst in sorted(by.items(), key=order):
+            hop, hop_s = defaultdict(list), defaultdict(list)
+            pj, pj_s = {}, {}
+            orig, orig_s, errs, ffail = [], [], {"null": 0, "near": 0, "far": 0}, 0
+            for r, x, la, lok in lst:
+                hop[r["hop_type"]].append(int(lok))
+                hop_s[r["hop_type"]].append(int(x["correct"]))
                 if r["pair"]:
-                    pj.setdefault(r["pair"], {})[r["hop_type"]] = int(x["correct"])
-            pairs = [(v["join"], v["join_lookup"]) for v in pj.values() if len(v) == 2]
-            orig = [x["correct"] for r, x in lst if not r["pair"]]
-            errs = {"null": 0, "near": 0, "far": 0}
-            for r, x in lst:
-                if x["correct"]:
-                    continue
-                errs[error_kind(r["gold"], x["answer"])] += 1
+                    pj.setdefault(r["pair"], {})[r["hop_type"]] = int(lok)
+                    pj_s.setdefault(r["pair"], {})[r["hop_type"]] = int(x["correct"])
+                else:
+                    orig.append(int(lok))
+                    orig_s.append(int(x["correct"]))
+                ffail += int(lok and not x["correct"])
+                if not lok:
+                    errs[error_kind(r["gold"], la)] += 1
+            gaps = lambda m: [(link_id(p), v["join_lookup"] - v["join"]) for p, v in m.items() if len(v) == 2]
+            did = [(link_id(p), (v["join_lookup"] - v["join"]) - (full_gap[p]["join_lookup"] - full_gap[p]["join"]))
+                   for p, v in pj.items() if len(v) == 2 and len(full_gap.get(p, {})) == 2]
+            by_hop = lambda key: {h: v for h, v in sorted(
+                ((h, _mean([x[key] for r, x, _, _ in lst if r["hop_type"] == h and x.get(key) is not None]))
+                 for h in {r["hop_type"] for r, *_ in lst})) if v is not None}
             cells[f"{pol}@{b}"] = {
                 "policy": pol, "budget": b, "n": len(lst),
-                "accuracy_original63": round(sum(orig) / len(orig), 4) if orig else None,
-                "per_hop": {h: round(sum(v) / len(v), 4) for h, v in sorted(hop.items())},
-                "paired_gap_lookup_minus_join": bootstrap_gap(pairs),
+                "accuracy_original63": _mean(orig), "accuracy_original63_strict": _mean(orig_s),
+                "per_hop": {h: _mean(v) for h, v in sorted(hop.items())},
+                "per_hop_strict": {h: _mean(v) for h, v in sorted(hop_s.items())},
+                "format_fail": ffail,
+                "paired_gap_lookup_minus_join": bootstrap_gap(gaps(pj)),
+                "paired_gap_strict": bootstrap_gap(gaps(pj_s)),
+                "did_vs_full": None if pol == "full" else bootstrap_gap(did),
                 "errors": errs,
-                "ev_recall": (lambda v: round(sum(v) / len(v), 4) if v else None)(
-                    [x["ev_recall"] for _, x in lst if x.get("ev_recall") is not None]),
-                "ans_recall_by_hop": {h: round(sum(v) / len(v), 4) for h, v in sorted(
-                    ((h, [x["ans_recall"] for r, x in lst if r["hop_type"] == h and x.get("ans_recall") is not None])
-                     for h in {r["hop_type"] for r, _ in lst})) if v},
-                "ev_recall_by_hop": {h: round(sum(v) / len(v), 4) for h, v in sorted(
-                    ((h, [x["ev_recall"] for r, x in lst if r["hop_type"] == h and x.get("ev_recall") is not None])
-                     for h in {r["hop_type"] for r, _ in lst})) if v},
-                "kept_frac": round(sum(x["kept_frac"] for _, x in lst) / len(lst), 4),
-                "gen_s_mean": round(sum(x["gen_s"] for _, x in lst) / len(lst), 3),
+                "ev_recall": _mean([x["ev_recall"] for _, x, *_ in lst if x.get("ev_recall") is not None]),
+                "ans_recall_by_hop": by_hop("ans_recall"),
+                "ev_recall_by_hop": by_hop("ev_recall"),
+                "kept_frac": _mean([x["kept_frac"] for _, x, *_ in lst]),
+                "gen_s_mean": round(sum(x["gen_s"] for _, x, *_ in lst) / len(lst), 3),
             }
         an = [r["analysis"] for r in rows if r["analysis"]]
         layer = {}
@@ -330,7 +394,10 @@ def main(argv=None):
     ap.add_argument("--budgets", type=float, nargs="+", default=[0.25, 0.1, 0.05, 0.02])
     ap.add_argument("--policies", nargs="+", default=POLICIES)
     ap.add_argument("--limit", type=int, default=0)
-    ap.add_argument("--only-pairs", action="store_true")
+    ap.add_argument("--only-pairs", action="store_true", help="no original questions")
+    ap.add_argument("--no-pairs", action="store_true", help="no paired questions")
+    ap.add_argument("--pair-set", default="net_profit", choices=sorted(PAIR_SETS))
+    ap.add_argument("--hop-types", nargs="+", default=None, help="keep only these original hop types")
     ap.add_argument("--max-new", type=int, default=384)
     ap.add_argument("--max-probe", type=int, default=384)
     ap.add_argument("--out", default="outputs/kv")
