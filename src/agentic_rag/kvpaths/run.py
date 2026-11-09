@@ -45,21 +45,42 @@ def q_text(question: str) -> str:
 
 
 def build_context(eng: KVEngine, docs):
-    """Tokenize piece by piece so every document has an exact token span."""
+    """Tokenize piece by piece so every document has an exact token span. Also returns, per
+    document, its text and token character offsets (to locate answer tokens)."""
     ids = eng.encode(PREFIX)
-    spans = []
+    spans, texts = [], []
     for d in docs:
         a = len(ids)
-        ids += eng.encode(doc_block(d) + "\n")
+        t = doc_block(d) + "\n"
+        enc = eng.tok(t, add_special_tokens=False, return_offsets_mapping=True)
+        ids += enc["input_ids"]
         spans.append((a, len(ids)))
+        texts.append((t, enc["offset_mapping"]))
     n_prefix = spans[0][0]
     ids += eng.encode(SUFFIX)
-    return ids, spans, (n_prefix, len(ids) - spans[-1][1])
+    return ids, spans, (n_prefix, len(ids) - spans[-1][1]), texts
 
 
-def rec(q, g, policy, budget):
+def answer_mask(eng: KVEngine, q, tgt_docs, spans, texts):
+    """Token positions, inside the target documents, of every occurrence of the gold value as
+    written in the corpus (e.g. "15.86"). None when the gold is not a literal in the text."""
+    lit = str(q.gold)                                   # floats print as written: 15.86, 20.4
+    m = torch.zeros(eng.L0, dtype=torch.bool, device="cuda")
+    for i in tgt_docs:
+        t, offs = texts[i]
+        for mt in re.finditer(r"(?<![0-9.])" + re.escape(lit) + r"(?![0-9])", t):
+            k, e = mt.span()
+            for j, (a, b) in enumerate(offs):
+                if a < e and b > k:
+                    m[spans[i][0] + j] = True
+    return m if bool(m.any()) else None
+
+
+def rec(q, g, policy, budget, recall=None):
     ans = parse_answer(g.text)
+    ev, an = recall if recall is not None else (None, None)
     return {"policy": policy, "budget": budget, "answer": ans, "correct": grade(q, ans),
+            "ev_recall": None if ev is None else round(ev, 4), "ans_recall": None if an is None else round(an, 4),
             "kept_frac": round(g.kept_frac, 4), "gen_tokens": g.n_tokens, "gen_s": round(g.seconds, 3),
             "text_tail": g.text[-300:]}
 
@@ -72,7 +93,7 @@ def run_size(eng: KVEngine, size: int, args, out_dir: Path) -> None:
         qs = [q for q in qs if pair_id(q.qid)]
     if args.limit:
         qs = qs[: args.limit]
-    ctx_ids, spans, protect = build_context(eng, docs)
+    ctx_ids, spans, protect, texts = build_context(eng, docs)
     d = out_dir / str(size)
     d.mkdir(parents=True, exist_ok=True)
     rpath = d / "records.jsonl"
@@ -115,43 +136,50 @@ def run_size(eng: KVEngine, size: int, args, out_dir: Path) -> None:
             ts = time.time()
             scores, q_win, _ = eng.score_window(q_ids)
             t_score = time.time() - ts
+            # target for selection recall: the second-hop document for pairs, all evidence otherwise
+            ev = [i for pair in q.evidence for i in doc_index.get(tuple(pair), [])]
+            tgt_docs = doc_index[tuple(q.evidence[-1])] if pair_id(q.qid) else ev
+            tmask = eng.span_mask([spans[i] for i in tgt_docs])
+            amask = answer_mask(eng, q, tgt_docs, spans, texts) if pair_id(q.qid) else None
+            R = lambda sel: (eng.recall(sel, tmask), None if amask is None else eng.recall(sel, amask))
             runs = []
             if "full" in args.policies:
                 runs.append(rec(q, eng.answer_full(q_ids, args.max_new), "full", 1.0))
             for b in budgets:
                 if "window" in args.policies:
-                    runs.append(rec(q, eng.answer_agnostic(sel_window[b], q_ids, args.max_new), "window", b))
+                    runs.append(rec(q, eng.answer_agnostic(sel_window[b], q_ids, args.max_new), "window", b, R(sel_window[b])))
                 if "keydiff" in args.policies:
-                    runs.append(rec(q, eng.answer_agnostic(sel_keydiff[b], q_ids, args.max_new), "keydiff", b))
+                    runs.append(rec(q, eng.answer_agnostic(sel_keydiff[b], q_ids, args.max_new), "keydiff", b, R(sel_keydiff[b])))
                 if "keydiff_block" in args.policies:
-                    runs.append(rec(q, eng.answer_agnostic(sel_kdblock[b], q_ids, args.max_new), "keydiff_block", b))
+                    runs.append(rec(q, eng.answer_agnostic(sel_kdblock[b], q_ids, args.max_new), "keydiff_block", b,
+                                    R(sel_kdblock[b])))
                 if {"query", "join", "join_key"} & set(args.policies):
-                    gq = eng.answer_aware(eng.select_topk(scores, b), q_ids, q_win, args.max_new)
+                    sq = eng.select_topk(scores, b)
+                    gq = eng.answer_aware(sq, q_ids, q_win, args.max_new)
                     if "query" in args.policies:
-                        runs.append(rec(q, gq, "query", b))
+                        runs.append(rec(q, gq, "query", b, R(sq)))
                     if "join" in args.policies:
                         # re-score with the question + first-pass answer (names the join key), keep
                         # the question KV from the plain pass so only the selection differs
                         probe = q_ids + eng.encode(gq.text)[: args.max_probe]
                         js, _, _ = eng.score_window(probe)
-                        runs.append(rec(q, eng.answer_aware(eng.select_topk(js, b), q_ids, q_win, args.max_new),
-                                        "join", b))
+                        sj = eng.select_topk(js, b)
+                        runs.append(rec(q, eng.answer_aware(sj, q_ids, q_win, args.max_new), "join", b, R(sj)))
                         del js
                     if "join_key" in args.policies:
                         # ablation: the same re-score but with every number removed from the first-pass
                         # answer, so only the entities it named (the join key) can steer the selection
                         probe = q_ids + eng.encode(strip_digits(gq.text))[: args.max_probe]
                         js, _, _ = eng.score_window(probe)
-                        runs.append(rec(q, eng.answer_aware(eng.select_topk(js, b), q_ids, q_win, args.max_new),
-                                        "join_key", b))
+                        sj = eng.select_topk(js, b)
+                        runs.append(rec(q, eng.answer_aware(sj, q_ids, q_win, args.max_new), "join_key", b, R(sj)))
                         del js
-            ev = [i for pair in q.evidence for i in doc_index.get(tuple(pair), [])]
             if "oracle" in args.policies:
                 runs.append(rec(q, eng.answer_agnostic(eng.select_spans([spans[i] for i in ev]), q_ids,
                                                        args.max_new), "oracle", None))
             analysis = None
             if pair_id(q.qid):                       # where does the second hop rank, per layer?
-                tgt = doc_index[tuple(q.evidence[-1])]
+                tgt = tgt_docs
                 order = [docpos[x.doc_id] for x in bm25(q.question, len(docs))]
                 bm25_rank = min((order.index(t) + 1 for t in tgt if t in order), default=None)
                 analysis = {"layer_rank": eng.doc_ranks(scores, spans, tgt), "bm25_rank": bm25_rank,
@@ -166,6 +194,45 @@ def run_size(eng: KVEngine, size: int, args, out_dir: Path) -> None:
             print(f"   [{qi + 1}/{len(todo)}] {q.qid} {q.hop_type} wall={row['wall_s']}s {acc}", flush=True)
     meta["peak_mem_gb"] = round(torch.cuda.max_memory_allocated() / 1e9, 2)
     (d / "meta.json").write_text(json.dumps(meta, indent=1))
+
+
+@torch.inference_mode()
+def recall_only(eng: KVEngine, size: int, args, out_dir: Path) -> None:
+    """Selection quality without generation: evidence recall of every budgeted policy that does
+    not need a first-pass answer (window, keydiff, keydiff_block, query). Cheap: one scoring pass
+    per question. Written to <out>/<tag>/<size>/recall.jsonl."""
+    sw = build_world(size)
+    docs = render_corpus(sw)
+    qs = build_questions(sw) + build_pairs(sw)
+    if args.only_pairs:
+        qs = [q for q in qs if pair_id(q.qid)]
+    ctx_ids, spans, protect, texts = build_context(eng, docs)
+    d = out_dir / str(size)
+    d.mkdir(parents=True, exist_ok=True)
+    eng.prefill(ctx_ids, protect)
+    doc_index = {(dd.ticker, dd.year): [] for dd in docs}
+    for i, dd in enumerate(docs):
+        doc_index[(dd.ticker, dd.year)].append(i)
+    kd = eng.keydiff_scores()
+    sels = {("window", b): eng.select_window(b) for b in args.budgets}
+    sels.update({("keydiff", b): eng.select_topk(kd, b) for b in args.budgets})
+    sels.update({("keydiff_block", b): eng.select_keydiff_block(b) for b in args.budgets})
+    del kd
+    with (d / "recall.jsonl").open("w") as f:
+        for q in qs:
+            ev = [i for pair in q.evidence for i in doc_index.get(tuple(pair), [])]
+            tgt = doc_index[tuple(q.evidence[-1])] if pair_id(q.qid) else ev
+            m = eng.span_mask([spans[i] for i in tgt])
+            am = answer_mask(eng, q, tgt, spans, texts) if pair_id(q.qid) else None
+            scores, _, _ = eng.score_window(eng.encode(q_text(q.question)))
+            allsel = dict(sels)
+            allsel.update({("query", b): eng.select_topk(scores, b) for b in args.budgets})
+            out = {f"{p}@{b}": round(eng.recall(sel, m), 4) for (p, b), sel in allsel.items()}
+            ans = {f"{p}@{b}": round(eng.recall(sel, am), 4) for (p, b), sel in allsel.items()} if am is not None else None
+            f.write(json.dumps({"qid": q.qid, "hop_type": q.hop_type, "pair": pair_id(q.qid),
+                                "recall": out, "ans_recall": ans}, ensure_ascii=False) + "\n")
+            del scores
+    print(f"=== recall size={size} questions={len(qs)} -> {d / 'recall.jsonl'}", flush=True)
 
 
 def bootstrap_gap(pairs: list[tuple[int, int]], n: int = 4000, seed: int = 0):
@@ -226,6 +293,14 @@ def summarize(out_dir: Path) -> dict:
                 "per_hop": {h: round(sum(v) / len(v), 4) for h, v in sorted(hop.items())},
                 "paired_gap_lookup_minus_join": bootstrap_gap(pairs),
                 "errors": errs,
+                "ev_recall": (lambda v: round(sum(v) / len(v), 4) if v else None)(
+                    [x["ev_recall"] for _, x in lst if x.get("ev_recall") is not None]),
+                "ans_recall_by_hop": {h: round(sum(v) / len(v), 4) for h, v in sorted(
+                    ((h, [x["ans_recall"] for r, x in lst if r["hop_type"] == h and x.get("ans_recall") is not None])
+                     for h in {r["hop_type"] for r, _ in lst})) if v},
+                "ev_recall_by_hop": {h: round(sum(v) / len(v), 4) for h, v in sorted(
+                    ((h, [x["ev_recall"] for r, x in lst if r["hop_type"] == h and x.get("ev_recall") is not None])
+                     for h in {r["hop_type"] for r, _ in lst})) if v},
                 "kept_frac": round(sum(x["kept_frac"] for _, x in lst) / len(lst), 4),
                 "gen_s_mean": round(sum(x["gen_s"] for _, x in lst) / len(lst), 3),
             }
@@ -260,6 +335,7 @@ def main(argv=None):
     ap.add_argument("--max-probe", type=int, default=384)
     ap.add_argument("--out", default="outputs/kv")
     ap.add_argument("--summarize-only", action="store_true")
+    ap.add_argument("--recall-only", action="store_true", help="selection recall only, no generation")
     args = ap.parse_args(argv)
     tag = args.tag or Path(args.model).name
     out_dir = Path(args.out) / tag
@@ -267,7 +343,9 @@ def main(argv=None):
     if not args.summarize_only:
         eng = KVEngine(args.model)
         for s in args.sizes:
-            run_size(eng, s, args, out_dir)
+            (recall_only if args.recall_only else run_size)(eng, s, args, out_dir)
+        if args.recall_only:
+            return
     summary = summarize(out_dir)
     summary["_meta"] = {"model": tag, "budgets": args.budgets, "policies": args.policies}
     (out_dir / "summary.json").write_text(json.dumps(summary, ensure_ascii=False, indent=1))

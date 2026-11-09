@@ -202,6 +202,20 @@ class KVEngine:
         t = torch.tensor(sorted(idx), device="cuda")
         return [t.unsqueeze(0).expand(self.n_kv, -1) for _ in range(self.n_layers)]
 
+    def recall(self, sel: list[torch.Tensor], mask: torch.Tensor) -> float:
+        """Share of the target tokens (``mask``, bool [L0]) that a selection keeps, averaged over
+        layers and KV heads: selection quality without any generation."""
+        n = mask.sum()
+        if n == 0:
+            return 0.0
+        return float(torch.stack([mask[s].sum(-1).float() for s in sel]).mean() / n)
+
+    def span_mask(self, spans: list[tuple[int, int]]) -> torch.Tensor:
+        m = torch.zeros(self.L0, dtype=torch.bool, device="cuda")
+        for a, b in spans:
+            m[a:b] = True
+        return m
+
     def kept_frac(self, sel: list[torch.Tensor]) -> float:
         """Fraction of *corpus* tokens kept (protected tokens excluded)."""
         return (sel[0].shape[-1] - self.P - self.S) / self.corpus_len
