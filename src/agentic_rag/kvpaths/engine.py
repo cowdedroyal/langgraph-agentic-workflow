@@ -168,6 +168,33 @@ class KVEngine:
             out.append((-F.cosine_similarity(K, anchor, dim=-1)).to(torch.float16))
         return out
 
+    @torch.inference_mode()
+    def select_keydiff_block(self, budget: float, block: int = 512) -> list[torch.Tensor]:
+        """KeyDiff as in the paper: stream the corpus in blocks, keep the ``k`` keys least similar
+        to the mean (normalized) key of the *current* kept set + new block. One-shot KeyDiff over
+        the whole context (``keydiff_scores``) is what kvpress's KeyDiffPress does without BlockPress.
+        Keys are the ones computed with the full context (we score a cached prefill)."""
+        k = self.n_keep(budget) - self.P - self.S
+        a, b = self.P, self.L0 - self.S
+        prot = self._protected()
+        sel = []
+        for l in self.cache.layers:
+            Kn = F.normalize(l.keys[0, :, a:b].float(), dim=-1)          # [Hkv, n, hd]
+            kept = torch.empty(self.n_kv, 0, dtype=torch.long, device="cuda")
+            for s in range(0, b - a, block):
+                new = torch.arange(s, min(s + block, b - a), device="cuda").unsqueeze(0).expand(self.n_kv, -1)
+                cand = torch.cat([kept, new], dim=1)
+                if cand.shape[1] <= k:
+                    kept = cand
+                    continue
+                Kc = Kn.gather(1, cand.unsqueeze(-1).expand(-1, -1, Kn.shape[-1]))
+                anchor = F.normalize(Kc.mean(dim=1, keepdim=True), dim=-1)
+                score = -(Kc * anchor).sum(-1)
+                kept = cand.gather(1, score.topk(k, dim=-1).indices)
+            idx = torch.cat([prot.unsqueeze(0).expand(self.n_kv, -1), kept + a], dim=1)
+            sel.append(idx.sort(dim=-1).values)
+        return sel
+
     def select_spans(self, spans: list[tuple[int, int]]) -> list[torch.Tensor]:
         idx = set(range(self.P)) | set(range(self.L0 - self.S, self.L0))
         for a, b in spans:

@@ -14,6 +14,7 @@ from __future__ import annotations
 import argparse
 import json
 import random
+import re
 import time
 from collections import defaultdict
 from pathlib import Path
@@ -30,7 +31,13 @@ from .questions import build_pairs, pair_id
 
 PREFIX = "<|im_start|>system\n你是金融分析助手。下面是完整的资料库，只能依据资料回答。" + ANSWER_RULE + "\n\n"
 SUFFIX = "<|im_end|>\n"
-POLICIES = ["full", "window", "keydiff", "query", "join", "oracle"]
+POLICIES = ["full", "window", "keydiff", "keydiff_block", "query", "join", "join_key", "oracle"]
+_DIGITS = re.compile(r"[0-9０-９][0-9０-９.,%]*")
+
+
+def strip_digits(text: str) -> str:
+    """Keep the entities a first-pass answer names (the join key), drop every number it read."""
+    return _DIGITS.sub("", text)
 
 
 def q_text(question: str) -> str:
@@ -90,6 +97,11 @@ def run_size(eng: KVEngine, size: int, args, out_dir: Path) -> None:
     sel_keydiff = {b: eng.select_topk(kd, b) for b in budgets}
     sel_window = {b: eng.select_window(b) for b in budgets}
     del kd
+    sel_kdblock = {}
+    if "keydiff_block" in args.policies:
+        tk = time.time()
+        sel_kdblock = {b: eng.select_keydiff_block(b) for b in budgets}
+        meta["keydiff_block_select_s"] = round(time.time() - tk, 2)
     doc_index = {(dd.ticker, dd.year): [] for dd in docs}
     for i, dd in enumerate(docs):
         doc_index[(dd.ticker, dd.year)].append(i)
@@ -111,7 +123,9 @@ def run_size(eng: KVEngine, size: int, args, out_dir: Path) -> None:
                     runs.append(rec(q, eng.answer_agnostic(sel_window[b], q_ids, args.max_new), "window", b))
                 if "keydiff" in args.policies:
                     runs.append(rec(q, eng.answer_agnostic(sel_keydiff[b], q_ids, args.max_new), "keydiff", b))
-                if "query" in args.policies or "join" in args.policies:
+                if "keydiff_block" in args.policies:
+                    runs.append(rec(q, eng.answer_agnostic(sel_kdblock[b], q_ids, args.max_new), "keydiff_block", b))
+                if {"query", "join", "join_key"} & set(args.policies):
                     gq = eng.answer_aware(eng.select_topk(scores, b), q_ids, q_win, args.max_new)
                     if "query" in args.policies:
                         runs.append(rec(q, gq, "query", b))
@@ -122,6 +136,14 @@ def run_size(eng: KVEngine, size: int, args, out_dir: Path) -> None:
                         js, _, _ = eng.score_window(probe)
                         runs.append(rec(q, eng.answer_aware(eng.select_topk(js, b), q_ids, q_win, args.max_new),
                                         "join", b))
+                        del js
+                    if "join_key" in args.policies:
+                        # ablation: the same re-score but with every number removed from the first-pass
+                        # answer, so only the entities it named (the join key) can steer the selection
+                        probe = q_ids + eng.encode(strip_digits(gq.text))[: args.max_probe]
+                        js, _, _ = eng.score_window(probe)
+                        runs.append(rec(q, eng.answer_aware(eng.select_topk(js, b), q_ids, q_win, args.max_new),
+                                        "join_key", b))
                         del js
             ev = [i for pair in q.evidence for i in doc_index.get(tuple(pair), [])]
             if "oracle" in args.policies:
@@ -158,6 +180,21 @@ def bootstrap_gap(pairs: list[tuple[int, int]], n: int = 4000, seed: int = 0):
             "n_pairs": len(diffs)}
 
 
+def error_kind(gold, answer) -> str:
+    """null: no answer (evidence judged missing); near: a number within 10% of gold (right
+    document, corrupted digits or wrong year/metric); far: anything else."""
+    if answer is None or str(answer).strip().lower() in ("null", "none", ""):
+        return "null"
+    try:
+        g = float(gold)
+        m = re.search(r"-?\d+(?:\.\d+)?", str(answer).replace(",", ""))
+        if m and g and abs(float(m.group(0)) - g) / abs(g) <= 0.10:
+            return "near"
+    except (TypeError, ValueError):
+        pass
+    return "far"
+
+
 def summarize(out_dir: Path) -> dict:
     summary = {}
     for d in sorted((p for p in out_dir.iterdir() if p.is_dir()), key=lambda p: int(p.name)):
@@ -178,11 +215,17 @@ def summarize(out_dir: Path) -> dict:
                     pj.setdefault(r["pair"], {})[r["hop_type"]] = int(x["correct"])
             pairs = [(v["join"], v["join_lookup"]) for v in pj.values() if len(v) == 2]
             orig = [x["correct"] for r, x in lst if not r["pair"]]
+            errs = {"null": 0, "near": 0, "far": 0}
+            for r, x in lst:
+                if x["correct"]:
+                    continue
+                errs[error_kind(r["gold"], x["answer"])] += 1
             cells[f"{pol}@{b}"] = {
                 "policy": pol, "budget": b, "n": len(lst),
                 "accuracy_original63": round(sum(orig) / len(orig), 4) if orig else None,
                 "per_hop": {h: round(sum(v) / len(v), 4) for h, v in sorted(hop.items())},
                 "paired_gap_lookup_minus_join": bootstrap_gap(pairs),
+                "errors": errs,
                 "kept_frac": round(sum(x["kept_frac"] for _, x in lst) / len(lst), 4),
                 "gen_s_mean": round(sum(x["gen_s"] for _, x in lst) / len(lst), 3),
             }
