@@ -24,30 +24,14 @@ techs:
 - slug: prompt-caching
   depth: core
   note: 前缀缓存价格作为成本变量
-  proposed:
-    name: Prompt Caching
-    name_zh: 提示前缀缓存
-    kind: method
 - slug: multi-hop-question-answering
   depth: core
-  proposed:
-    name: Multi-hop Question Answering
-    name_zh: 多跳问答
-    kind: application
 - slug: text-to-sql
   depth: used
   note: 在模型自建的事实表上写 SQL
-  proposed:
-    name: Text-to-SQL
-    name_zh: 文本转 SQL
-    kind: application
 - slug: agentic-search
   depth: used
   note: search / read 工具循环
-  proposed:
-    name: Agentic Search
-    name_zh: 智能体搜索
-    kind: method
 - slug: tool-use
   depth: used
 - slug: bm25
