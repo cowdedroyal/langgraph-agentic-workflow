@@ -16,6 +16,7 @@ questions:
 - 语料从 3 万字涨到 300 万字时，各条访问路径的准确率、每题成本、延迟怎么变，分界点在哪？
 - RAG 在多跳题上失败，是排序的问题还是连接的问题？
 - 物化视图答不了表结构以外的问题时，规划器能不能事先知道并改走别的路径，代价是多少？
+- 自托管长上下文用 KV 压缩省显存时，按问题挑 KV 会不会像 RAG 一样在连接题上崩，修复的收益从哪来？
 techs:
 - slug: retrieval-augmented-generation
   depth: core
@@ -50,6 +51,9 @@ techs:
   note: 早期版本的自纠错图
 - slug: self-rag
   depth: touched
+- slug: kv-cache
+  depth: used
+  note: 延伸实验，用 kvpress 的 SnapKV / KeyDiff 在 H20 上按预算切 KV
 contributions:
 - what: 在同一组多跳题、四档语料规模（最多约 300 万字）上对比七条证据访问路径：全文、混合检索、检索加显式连接、模型读表、模型写 SQL、按需物化、工具 Agent
   why: 前缀缓存改变了长上下文的成本，需要在同一组题上重新量各条路径的准确率、成本和延迟
@@ -86,6 +90,16 @@ contributions:
   - paths-code
   - oos-540-lazy
   - planner-540-lazy
+- what: 把访问路径对比延伸到 KV 缓存层，用配对题和差中差拆出压缩带来的连接代价，用 join_key 消融定位重挑的收益来源
+  why: RAG 在连接题上全是 0 分；SnapKV 用问题对上下文的注意力挑 KV，结构上和按问题检索一样，需要验证它是否同样失败
+  techs:
+  - kv-cache
+  - long-context
+  - multi-hop-question-answering
+  evidence:
+  - kv-code
+  - kv-54-query-2
+  - kv-54-join-key-2
 decisions:
 - choice: 换模型后整张表重跑，旧模型的结果单独保留，不混在一张表里
   why: 这台设备只能用 deepseek-v4.1-flash，混用两个模型版本的格子无法比较；旧结果用来核对结论是否依赖模型版本
@@ -143,6 +157,16 @@ findings:
   kind: negative
   evidence:
   - results
+- claim: 按问题挑 KV（SnapKV）的连接代价只在 2% 预算下显著（Qwen3-4B，20.5 万 token 时差中差 +0.41），5%–25% 下区间跨 0；问题 token 的注意力在任何一层给第二跳文档的排名都不如 BM25
+  kind: insight
+  evidence:
+  - kv-54-query-2
+  - kv-54-second-hop-rank
+- claim: 用第一遍回答重新挑 KV 把 2% 预算下的连接题从 0.06 修到 0.50；删掉回答里的数字、只留公司名时仍是 0.44，收益主要来自说出连接键
+  kind: insight
+  evidence:
+  - kv-54-join-2
+  - kv-54-join-key-2
 metrics:
 - name: 视图问答准确率（SQL 查表）
   value: 1.0
@@ -210,6 +234,16 @@ metrics:
   evidence:
   - results-reranker
   - results-hybrid
+- name: 连接题准确率（KV 只留 2%，显式重挑）
+  value: 0.5
+  baseline:
+    value: 0.06
+    label: SnapKV 按问题挑 KV
+  setting: Qwen3-4B-Instruct-2507，54 家干扰（20.5 万 token），32 道连接题（16 条独立供应关系），单张 H20
+  scale: pilot
+  evidence:
+  - kv-54-join-2
+  - kv-54-query-2
 evidence:
 - id: paths-code
   type: file
@@ -352,5 +386,31 @@ evidence:
   path: docs/results.md
   quote:
   - '| Hybrid + Reranker (bge-reranker-base) | 0.3039 | 0.7451 | 0.2621 | 0.1984 | 0.0784 |'
+- id: kv-code
+  type: file
+  path: src/agentic_rag/kvpaths/run.py
+  quote:
+  - 'POLICIES = ["full", "window", "keydiff", "keydiff_block", "query", "join", "join_key", "oracle", "oracle_aware"]'
+  - '"""Keep the entities a first-pass answer names (the join key), drop every number it read."""'
+- id: kv-54-query-2
+  type: file
+  path: docs/metrics/kv_paths_qwen3-4b-2507.md
+  quote:
+  - '| query | 0.02 | – | – | – | – | – | – | 0.66 | 0.06 | +0.594 [+0.44, +0.75] n=32/16 | +0.406 [+0.19, +0.62] | +0.281 | 10 | 8/9/24 | 2.837 |'
+- id: kv-54-join-2
+  type: file
+  path: docs/metrics/kv_paths_qwen3-4b-2507.md
+  quote:
+  - '| join | 0.02 | – | – | – | – | – | – | 0.94 | 0.50 | +0.438 [+0.22, +0.66] n=32/16 | +0.250 [+0.03, +0.47] | +0.688 | 20 | 3/2/13 | 3.018 |'
+- id: kv-54-join-key-2
+  type: file
+  path: docs/metrics/kv_paths_qwen3-4b-2507-x.md
+  quote:
+  - '| join_key | 0.02 | – | – | – | – | – | – | 0.81 | 0.44 | +0.375 [+0.22, +0.53] n=32/16 | – | +0.156 | 27 | 3/6/15 | 3.144 |'
+- id: kv-54-second-hop-rank
+  type: file
+  path: docs/metrics/kv_paths_qwen3-4b-2507.md
+  quote:
+  - best layer 23 (rank 53); top-3 rate max 0.031
 links:
   repo: https://github.com/cowdedroyal-lab/langgraph-agentic-workflow
