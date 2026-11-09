@@ -1,11 +1,11 @@
 # agentic-rag-finance — one-stop commands. Override the interpreter with:
 #   make <target> PY=/path/to/python
-PY  ?= /data/wtw/envs/langgraph-agentic-workflow/bin/python
+PY  ?= python
 PIP := $(PY) -m pip
 ARAG := $(PY) -m agentic_rag.cli
 
 .PHONY: help setup install-core install-train install-serve install-ray \
-        corpus index demo smoke bench prepare-data sft grpo serve health ray graph clean
+        corpus index demo smoke bench prepare-data sft grpo serve health ray graph clean access planner
 
 help:  ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN{FS=":.*?## "}{printf "  \033[36m%-16s\033[0m %s\n", $$1, $$2}'
@@ -62,3 +62,9 @@ graph:  ## Render the LangGraph workflow to graph.png
 
 clean:  ## Remove generated artifacts
 	rm -rf data/index outputs .pytest_cache && find . -name __pycache__ -type d -prune -exec rm -rf {} +
+
+access:  ## Access-path study: all paths, all corpus sizes (ACCESS_MODEL / ACCESS_BASE_URL / ACCESS_API_KEY)
+	PYTHONPATH=src $(PY) -W ignore -m agentic_rag.access.run --sizes 0 54 180 540 --paths scan index index_join view view_sql agent --workers 4
+
+planner:  ## Query planner replay over the access-path records (run `make access` first)
+	PYTHONPATH=src $(PY) -W ignore -m agentic_rag.access.planner

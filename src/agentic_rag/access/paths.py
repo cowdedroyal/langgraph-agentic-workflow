@@ -199,6 +199,7 @@ class ViewPath:
                                                    v.get("revenue"), v.get("net_profit"), v.get("gross_margin"),
                                                    sup, ",".join(map(str, v["customers"])))))
         self.n_rows = len(merged)
+        self._merged = merged
         return "\n".join(lines)
 
     def answer(self, question: str) -> PathResult:
@@ -207,6 +208,225 @@ class ViewPath:
         r = self.llm.chat([{"role": "system", "content": sys},
                            {"role": "user", "content": f"{question}\n\n{ANSWER_RULE}"}], max_tokens=4096)
         return PathResult(parse_answer(r.text), r.text, r.usage, context_tokens_est=r.usage.prompt)
+
+
+# --------------------------------------------------------------------------- view + SQL
+class ViewSQLPath(ViewPath):
+    """Materialized view queried by code. Same extraction as ``view`` (identical requests, so
+    the cache makes the build free when ``view`` ran first), but the rows go into SQLite and
+    the model writes SQL instead of reading the table. Counting, max and joins are then done
+    by the database, so the remaining errors come from extraction and from SQL generation,
+    not from the model miscounting a long table.
+
+    The prompt gets the schema plus the distinct ``sector`` values (the catalog an optimizer
+    would have), because extracted sector strings are free text."""
+
+    name = "view_sql"
+    SQL = ("下面是一个 SQLite 数据库，内容是从年报、公告、研报抽取出的事实。\n{schema}\n\n"
+           "外键：suppliers.supplier 和 customers.customer 与 facts.company 是同一套公司简称，可以直接等值连接。\n"
+           "sector 和 material 是抽取出的自由文本，同一含义可能有好几种写法。下面是它们的全部取值；"
+           "按这两列筛选时，按含义把所有相关取值都写进 IN (...)，不要用表里没有的取值。\n"
+           "sector 全部取值：{sectors}\nmaterial 全部取值：{materials}\n\n各表示例行：\n{samples}\n\n"
+           "写一条 SQLite 查询来回答问题。金额单位亿元，毛利率单位%。问题里的公司名就是 company 列的值，直接用等值匹配。"
+           "只输出 SQL，放在 ```sql 代码块里。\n\n问题：{q}")
+    ANSWER = ("问题：{q}\n\n为回答它执行的 SQL：\n{sql}\n\n结果（最多 50 行）：\n{rows}\n\n"
+              "根据结果回答，需要时自己做最后一步计算。" + ANSWER_RULE)
+    SCHEMA = ("facts(company TEXT, ticker TEXT, year INTEGER, sector TEXT, revenue REAL, net_profit REAL, "
+              "gross_margin REAL)  -- 每行一家公司一个年份\n"
+              "suppliers(company TEXT, ticker TEXT, year INTEGER, supplier TEXT, material TEXT)  -- company 的供应商\n"
+              "customers(company TEXT, ticker TEXT, year INTEGER, customer TEXT)")
+
+    def __init__(self, llm: LLM, docs: list[RawDoc], workers: int = 8):
+        super().__init__(llm, docs, workers)
+        import sqlite3
+        import threading
+
+        self._lock = threading.Lock()
+        self.db = sqlite3.connect(":memory:", check_same_thread=False)
+        c = self.db.cursor()
+        c.execute("CREATE TABLE facts(company TEXT, ticker TEXT, year INTEGER, sector TEXT, revenue REAL, "
+                  "net_profit REAL, gross_margin REAL)")
+        c.execute("CREATE TABLE suppliers(company TEXT, ticker TEXT, year INTEGER, supplier TEXT, material TEXT)")
+        c.execute("CREATE TABLE customers(company TEXT, ticker TEXT, year INTEGER, customer TEXT)")
+        for v in self._merged.values():
+            key = (v["company"], v["ticker"], _int(v["year"]))
+            c.execute("INSERT INTO facts VALUES (?,?,?,?,?,?,?)",
+                      (*key, v.get("sector"), _float(v.get("revenue")), _float(v.get("net_profit")),
+                       _float(v.get("gross_margin"))))
+            for sp in v["suppliers"]:
+                c.execute("INSERT INTO suppliers VALUES (?,?,?,?,?)", (*key, sp.get("name"), sp.get("material")))
+            for cu in v["customers"]:
+                c.execute("INSERT INTO customers VALUES (?,?,?,?)", (*key, str(cu)))
+        self.db.commit()
+        self.sectors = [r[0] for r in c.execute("SELECT DISTINCT sector FROM facts WHERE sector IS NOT NULL")]
+        self.materials = [r[0] for r in c.execute("SELECT DISTINCT material FROM suppliers WHERE material IS NOT NULL")]
+        samples = []
+        for t in ("facts", "suppliers", "customers"):
+            cur = c.execute(f"SELECT * FROM {t} ORDER BY ticker, year LIMIT 3")
+            samples.append(t + ": " + " ; ".join("(" + ", ".join(map(str, r)) + ")" for r in cur.fetchall()))
+        self.samples = "\n".join(samples)
+
+    def _exec(self, sql: str, limit: int = 50):
+        """Run a query; ``limit`` caps the rows returned (50 is enough to show the model a result)."""
+        with self._lock:
+            cur = self.db.execute(sql)
+            cols = [d[0] for d in cur.description or []]
+            return cols, cur.fetchmany(limit)
+
+    def answer(self, question: str, max_tokens: int = 4096) -> PathResult:
+        prompt = (self.SQL.replace("{schema}", self.SCHEMA)
+                  .replace("{sectors}", "、".join(map(str, self.sectors))).replace("{samples}", self.samples)
+                  .replace("{materials}", "、".join(map(str, self.materials)))
+                  .replace("{q}", question))
+        msgs = [{"role": "user", "content": prompt}]
+        total, trace, sql, rows = Usage(), [], "", "（无）"
+        for attempt in range(2):  # one retry: with the error message, or with a doubled budget
+            # the doubled budget also changes the request body, so the retry is not served
+            # from the response cache (an identical retry would return the same empty reply)
+            r = self.llm.chat(msgs, max_tokens=max_tokens * (2 if attempt else 1))
+            total.add(r.usage)
+            m = re.search(r"```(?:sql)?\s*(.+?)```", r.text, re.S | re.I)
+            sql = (m.group(1) if m else r.text).strip()
+            if not sql:
+                trace.append({"sql": "", "error": f"empty reply (finish={r.finish})"})
+                continue
+            try:
+                cols, res = self._exec(sql)
+                rows = "\n".join([" | ".join(cols)] + [" | ".join(map(str, x)) for x in res]) if res else "（空）"
+                trace.append({"sql": sql, "n_rows": len(res)})
+                break
+            except Exception as e:  # sqlite errors: give the model one chance to fix the query
+                trace.append({"sql": sql, "error": str(e)[:200]})
+                msgs += [{"role": "assistant", "content": r.text},
+                         {"role": "user", "content": f"执行出错：{e}。请修正，只输出 SQL。"}]
+        ans_prompt = self.ANSWER.replace("{q}", question).replace("{sql}", sql).replace("{rows}", rows)
+        a = self.llm.chat([{"role": "user", "content": ans_prompt}],
+                          max_tokens=max_tokens)
+        total.add(a.usage)
+        return PathResult(parse_answer(a.text), a.text, total, trace=trace)
+
+
+class LazyViewPath(ViewSQLPath):
+    """Lazy materialization: answer a question the view's schema does not cover by extracting
+    the missing attribute on demand, only for the rows that need it.
+
+      1. plan:    the model names the missing attribute and writes SQL over the *existing* view
+                  that selects the (ticker, year) rows needing it; the view acts as the index
+                  that says which documents to read (a sector, a supplier found by a join, ...);
+      2. extract: one call per selected company-year over that company-year's documents;
+                  identical requests are cached, so a later question needing the same column
+                  reuses the work (the view grows with the workload, like adaptive indexing);
+      3. answer:  add the column as table ``extra(ticker, year, value)`` and run the SQL path.
+
+    Cost scales with the rows the question touches, not with the corpus."""
+
+    name = "view_lazy"
+    MAX_ROWS = 200
+    PLAN_LAZY = ("下面是一个 SQLite 数据库，内容是从资料库抽取出的事实。\n{schema}\n"
+                 "外键：suppliers.supplier 与 facts.company 是同一套公司简称。\n"
+                 "sector 全部取值：{sectors}\nmaterial 全部取值：{materials}\nyear 全部取值：{years}\n\n"
+                 "回答下面的问题需要一个表里没有的属性。请：\n"
+                 "1. 给出这个属性的中文描述，包含年份和单位，例如“2023年XX（亿元）”；\n"
+                 "2. 写一条 SQL，从现有表里选出需要这个属性的公司年份行，只输出 ticker 和 year 两列"
+                 "（year 是存放该属性的报告年份，sector/material 按含义用 IN 选全）。\n"
+                 "数据字典：年报和业绩快报都附带上一年的对比数据，所以表里没有的年份 Y，可以从 Y+1 年的报告行里取。\n"
+                 "示例（属性与本题无关）：\n"
+                 "问：华丰酒业2022年的员工人数是多少？ -> {\"attribute\": \"2022年员工人数（人）\", "
+                 "\"rows_sql\": \"SELECT ticker, year FROM facts WHERE company = '华丰酒业' AND year = 2022\"}\n"
+                 "问：华丰酒业的包装供应商2023年的员工人数是多少？ -> {\"attribute\": \"2023年员工人数（人）\", "
+                 "\"rows_sql\": \"SELECT f.ticker, f.year FROM suppliers s JOIN facts f ON f.company = s.supplier "
+                 "WHERE s.company = '华丰酒业' AND s.year = 2023 AND f.year = 2023\"}\n"
+                 "只输出 JSON：{\"attribute\": \"...\", \"rows_sql\": \"SELECT ticker, year FROM ...\"}\n\n问题：{q}")
+    EXTRACT_ONE = ("从下面这家公司的文档中找出：{attr}。只输出 JSON：{\"value\": 数值或文本}，"
+                   "文档里没有就输出 {\"value\": null}。\n\n")
+
+    def __init__(self, llm: LLM, docs: list[RawDoc], workers: int = 8):
+        super().__init__(llm, docs, workers)
+        self.years = [r[0] for r in self.db.execute("SELECT DISTINCT year FROM facts WHERE year IS NOT NULL ORDER BY year")]
+        self.docs_by = {}
+        for d in docs:
+            self.docs_by.setdefault((d.ticker, d.year), []).append(d)
+        self.workers = workers
+
+    def answer(self, question: str, max_tokens: int = 4096) -> PathResult:
+        import sqlite3
+        from concurrent.futures import ThreadPoolExecutor
+
+        total, trace = Usage(), []
+        prompt = (self.PLAN_LAZY.replace("{schema}", self.SCHEMA)
+                  .replace("{sectors}", "、".join(map(str, self.sectors)))
+                  .replace("{materials}", "、".join(map(str, self.materials)))
+                  .replace("{years}", "、".join(map(str, self.years))).replace("{q}", question))
+        spec = {}
+        for attempt in range(2):  # retry once with a doubled budget on a truncated / unparsable plan
+            plan = self.llm.chat([{"role": "user", "content": prompt}], max_tokens=max_tokens * (2 if attempt else 1))
+            total.add(plan.usage)
+            m = re.search(r"\{.*\}", plan.text, re.S)
+            try:
+                spec = json.loads(m.group(0)) if m else {}
+            except json.JSONDecodeError:
+                spec = {}
+            if spec.get("attribute") and spec.get("rows_sql"):
+                break
+        attr, rows_sql = str(spec.get("attribute") or ""), str(spec.get("rows_sql") or "")
+        try:
+            # row selection must see every matching row, not the 50 shown to the model
+            _, rows = self._exec(rows_sql, limit=self.MAX_ROWS + 1) if rows_sql else ([], [])
+        except Exception as e:
+            rows = []
+            trace.append({"rows_sql": rows_sql, "error": str(e)[:200]})
+        keys = sorted({(str(t), _int(y)) for t, y in rows if (str(t), _int(y)) in self.docs_by})[: self.MAX_ROWS]
+        trace.append({"attribute": attr, "rows_sql": rows_sql, "n_rows": len(keys),
+                      "truncated": len(rows) > self.MAX_ROWS})
+        if not attr or not keys:
+            return PathResult(None, plan.text, total, trace=trace)
+
+        def one(k):
+            text = "\n\n".join(d.text for d in sorted(self.docs_by[k], key=lambda d: d.doc_id))
+            r = self.llm.chat([{"role": "user", "content": self.EXTRACT_ONE.replace("{attr}", attr) + text}],
+                              max_tokens=1500)
+            mm = re.search(r"\{.*\}", r.text, re.S)
+            try:
+                v = json.loads(mm.group(0)).get("value") if mm else None
+            except json.JSONDecodeError:
+                v = None
+            return k, v, r.usage
+        with ThreadPoolExecutor(self.workers) as ex:
+            got = list(ex.map(one, keys))
+        for _, _, u in got:
+            total.add(u)
+        trace.append({"extracted": sum(v is not None for _, v, _ in got)})
+
+        # per-question copy of the view plus the new column
+        db = sqlite3.connect(":memory:", check_same_thread=False)
+        with self._lock:
+            self.db.backup(db)
+        db.execute("CREATE TABLE extra(ticker TEXT, year INTEGER, value)")
+        db.executemany("INSERT INTO extra VALUES (?,?,?)",
+                       [(t, y, _float(v) if _float(v) is not None else v) for (t, y), v, _ in got])
+        sub = ViewSQLPath.__new__(ViewSQLPath)
+        sub.__dict__.update(self.__dict__)
+        sub.db = db
+        sub.SCHEMA = self.SCHEMA + (f"\nextra(ticker TEXT, year INTEGER, value)  -- 按需抽取，只覆盖相关公司。"
+                                    f"每行的 value 就是“{attr}”；year 是抽取它的报告年份，不一定等于属性所指的年份，"
+                                    f"不要按属性年份过滤 extra.year")
+        r = sub.answer(question, max_tokens)
+        total.add(r.usage)
+        return PathResult(r.answer, r.text, total, trace=trace + (r.trace or []))
+
+
+def _float(x):
+    try:
+        return float(str(x).replace(",", "").rstrip("%亿元 ")) if x is not None else None
+    except ValueError:
+        return None
+
+
+def _int(x):
+    try:
+        return int(x)
+    except (TypeError, ValueError):
+        return None
 
 
 # --------------------------------------------------------------------------- agent
@@ -261,7 +481,8 @@ class AgentPath:
                 msgs.append({"role": "tool", "tool_call_id": c["id"], "content": out})
         else:
             msgs.append({"role": "user", "content": "步数已用完，请根据已查到的信息给出最终答案。" + ANSWER_RULE})
-            r = self.llm.chat(msgs, tools=self.TOOLS, max_tokens=4096, tool_choice="none")
+            # no tools on the last turn: some gateways ignore tool_choice="none" and call a tool anyway
+            r = self.llm.chat(msgs, max_tokens=4096)
             total.add(r.usage)
             text = r.text
         return PathResult(parse_answer(text), text, total, trace=trace)

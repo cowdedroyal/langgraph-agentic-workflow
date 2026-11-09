@@ -1,181 +1,240 @@
-# 金融多跳问答 Agentic RAG（LangGraph · 混合检索 · LoRA/GRPO · vLLM/Ray）
+# 多跳问答的证据访问路径：长上下文、RAG、物化视图、Agent 各在什么时候用
 
-> 面向**金融研报/年报**的、可**自纠错**、可**评测**、可**训练优化**的本地 Agentic RAG 全栈系统。
-> 从合成数据、混合检索、多跳 QA 评测，到 LoRA/GRPO 后训练与 vLLM/Ray/FSDP 服务化并行调度，端到端打通 P0–P8，全部在 2×A100 上真实跑通。
-
-**技术栈**：LangGraph · LangChain 1.x · FAISS · BM25(jieba) · BAAI/bge-base-zh · sentence-transformers · trl/peft（LoRA·GRPO）· vLLM · Ray · FSDP(accelerate) · Qwen2.5
+> 一项实证研究加一个成本模型：语料从 3 万字涨到 300 万字（约 1.6M token）、问题有的落在预先抽取的表结构之内、有的落在表结构之外时，
+> 模型拿证据的七种方式在准确率、每题成本、延迟上怎么取舍，分界点在哪，以及一个按这些分界点选路径的规划器能做到多好。
+> 数据是可控的合成金融语料，结论的适用范围见「局限」。
 
 ---
 
 ## 问题
 
-### 背景（Situation）
-金融问答常需在**多份长文档**间做**多跳推理**：跨年度（“2023 营收较 2021 增长多少”）、跨主体（“某公司的供应商去年净利润”）、指标趋势（“毛利率三年走势”）。通用单轮 RAG 有三大痛点：① 单路检索（纯向量或纯关键词）对“公司＋年份”这类**实体＋数字**查询召回不全，多跳证据难以同时命中；② 生成易**幻觉**、不引用证据；③ 缺乏闭环评测与领域模型优化手段，且金融场景常要求**本地化部署**。
+金融多跳问答（跨年度对比、上下游供应链、行业聚合）要从一堆报告里拿证据。默认做法是 RAG。
+但模型有了百万级上下文，而且 API 的前缀缓存读价格只有正常输入的约 1/50（DeepSeek：命中 $0.003/M，未命中 $0.15/M），
+"RAG 便宜、长上下文准"这条老经验还成不成立、在哪个规模翻转，没有人在同一组题上量过。另一条常见做法是先把文档抽成表再查（物化视图），
+它便宜，但只能回答表结构预想到的问题。
 
-### 目标（Task）
-构建一个本地可复现的金融 Agentic RAG 系统：检索做**多路融合**提升多跳召回；生成具备**幻觉检测＋自纠错**闭环；建立**可量化评测**体系；并打通 **LoRA/GRPO 后训练**与 **vLLM/Ray/FSDP** 服务化与并行调度。
+要回答的问题：
 
----
+1. 语料从 3 万字涨到 300 万字时，各条路径的准确率、每题成本、延迟怎么变？分界点在哪？
+2. RAG 在多跳题上失败，是排序的问题还是连接的问题？
+3. 物化视图答不了表结构以外的问题时，规划器能不能事先知道、改走别的路径？代价是多少？
 
 ## 方案
 
-### 技术选型与难点攻克（Action）
-- **数据层（P1）**：合成 6 家虚构上市公司 × 3 年度 × 3 类文书（年报/公告/研报），内置**上下游供应链**关系以支撑多跳；多格式解析（MD/HTML/TXT，stdlib 零额外依赖）＋ 财务表格保真分块；统一 `Document` JSONL 供稠密/稀疏检索共用。
-- **混合检索（P2，核心）**：FAISS（bge-zh 稠密）＋ BM25（jieba 稀疏）经 **RRF 融合** ＋ 元数据过滤 ＋ 可选 cross-encoder 重排；以 `HybridRetriever.invoke()` **保持 LangGraph 节点接口不变**，仅替换实现。
-- **自纠错图**：LangGraph `route → retrieve → grade_documents → generate → grade_generation` 闭环，幻觉与答案**双重 LLM-Judge**，未通过按 `max_retries` 重生成/补检索。
-- **多跳数据合成（P3）**：答案由结构化 facts **精确计算**（非 LLM 生成，保证 ground truth），自动定位 evidence chunk，产出 51 条可追溯多跳 QA（跨年度/上下游/指标变化/深链）。
-- **评测体系（P4）**：检索 Recall@k / MRR / nDCG / **多跳全链 Hit@k**；生成 faithfulness / citation / answer-relevance；端到端 准确率 / 重试 / 延迟。
-- **训练全链路（P5/P6）**：trl＋peft **LoRA SFT**（证据引用式回答 ＋ JSON 路由稳定性）；**GRPO** 后训练，奖励**复用 P4 评测指标**（正确性＋引用＋格式−幻觉），形成“评测→训练”闭环；并提供 **LLaMA-Factory / veRL** 生产档配置。
-- **服务与调度（P7/P8）**：**vLLM** 起 OpenAI 兼容服务，LLM 后端经 `LLM_BACKEND` 一键切换 Ollama/vLLM；**Ray** 并行 ingestion/评测；**FSDP** 2×A100 多卡训练。
+### 语料和题目
 
-### 架构
+- **语料**：6 家核心公司，加 0 / 54 / 180 / 540 家"干扰公司"，每家每年 3 份文书（年报摘要、业绩快报、研报），2021–2023 年。
+  干扰公司和核心公司同行业、同版式，一半和核心公司共用供应商，所以"X 的供应商"对不看 X 的检索是有歧义的。生成过程有种子，逐字节可复现。
 
-自纠错工作流（保留基线闭环，仅替换检索实现）：
+  | 干扰公司 | 公司 | 文档 | 字数 | scan 的 prompt token |
+  |---|---|---|---|---|
+  | 0 | 6 | 54 | 33,086 | 17,648 |
+  | 54 | 60 | 540 | 331,101 | 176,588 |
+  | 180 | 186 | 1,674 | 1,027,710 | 547,076 |
+  | 540 | 546 | 4,914 | 3,019,947 | 约 1.61M（超出 1M 上下文） |
 
-```mermaid
-flowchart TD
-    Q([用户问题]) --> ROUTE{route_question}
-    ROUTE -->|金融/向量库| RET["retrieve · HybridRetriever<br/>FAISS+BM25+RRF"]
-    ROUTE -->|实时/新闻| WEB[web_search]
-    RET --> GD[grade_documents]
-    GD -->|有相关文档| GEN[generate]
-    GD -->|不相关| WEB
-    WEB --> GEN
-    GEN --> GG{grade_generation<br/>幻觉 + 答案 双判}
-    GG -->|存在幻觉| GEN
-    GG -->|未回答问题| WEB
-    GG -->|有据且切题| DONE([END])
-```
+- **基础题集（63 题）**：跨年增长率、指标变化、供应商的净利润（连接键不在问题里）、供应商的供应商、行业聚合（最高 / 超过 X 的有几家）。
+- **表外题集（52 题）**：答案在语料里，但不在视图的表结构里：研发费用、资产负债率、经营现金流（只在年报里）、评级、目标价、券商（只在研报里）、
+  2020 年数据（只在 2021 年报告的"上年同期"一栏）、供应商的资产负债率（连接 + 表外字段）、行业里研发费用最高的公司（聚合 + 表外字段）。
+  视图的表结构是照着基础题集设计的，这正是视图在实际中被设计出来的方式。
+- **标准答案全部用代码从生成参数算出**，判分是确定性比较，不用 LLM 评委。表外题的每个答案都核对过确实写在证据文档里（有测试）。
 
-完整系统架构、模块映射与一致性设计见 **[docs/architecture.md](docs/architecture.md)**；完整指标见 **[docs/results.md](docs/results.md)**。
+### 七条访问路径
 
-### 工程难点与解法（真实踩坑）
+把语料看成数据库、问题看成查询（借数据库的访问路径选择）：
 
-- **vLLM 在本机的多重坑**：① 启动联网校验 HF（SSL EOF）反复重试 → `HF_HUB_OFFLINE=1` 走本地缓存；② `gpu_memory_utilization=0.5` 在被占用的卡上算出 **KV cache 负值 OOM** → 选空闲卡 + util 0.9；③ `response_format` 的 **guided-decoding(xgrammar) 崩溃 `execute_model`** → JSON 不依赖原生约束，改“prompt 指令 + `parse_json` 容错”；④ **langchain-openai 1.x 自定义 TCP keepalive + 本机 SOCKS 代理**导致连不上 localhost → 禁 keepalive + 自动把 localhost 加入 `NO_PROXY` + 显式 `127.0.0.1`。
-- **混合检索元数据过滤截断**：小 topk 初检后再过滤会丢掉符合条件的相关文档 → 检测到 filter 时**扩大初检广度**再过滤。
-- **多跳 ground truth 可靠性**：QA 答案由结构化 facts **精确计算**而非 LLM 生成，evidence 可追溯到具体 chunk，使检索/引用指标可信。
-- **依赖兼容性**：新版 transformers 在 import 期引用 `torch.float8_e8m0fnu`（torch 2.5 无）→ 锁定 **transformers 4.47.1 + sentence-transformers 3.4.1 + torch 2.5.1**，并分层 `requirements*.txt` 隔离 RAG/训练/服务依赖。
-- **LangChain 1.x 适配**：Tavily 迁移到 `langchain-tavily`，向量库由 `SKLearnVectorStore` 整体替换为自研 FAISS+BM25，节点接口零改动。
+| 路径 | 数据库里的对应 | 做法 |
+|---|---|---|
+| `scan` | 全表扫描 | 整个语料放进上下文，语料在前、问题在后，让前缀缓存跨题复用 |
+| `index` | 索引扫描 | BM25 + bge 混合检索，读 top-8 个块 |
+| `index_join` | 索引 + 显式连接 | 先检索一次，让模型说出还缺哪些实体（连接键），再逐个检索 |
+| `view` | 物化视图，模型读表 | 一次性把每篇文档抽成事实行，合并成表，模型读表作答 |
+| `view_sql` | 物化视图，引擎查表 | 同一张表放进 SQLite，模型写 SQL，再根据结果作答 |
+| `view_lazy` | 按需物化（自适应索引） | 问题要的字段不在表里时，先用现有表选出需要它的行，只对这些行的文档抽这个字段，再写 SQL |
+| `agent` | 嵌套循环 | 模型自己调 search / read 工具，最多 12 步 |
+
+模型：`deepseek-v4.1-flash`（经本地网关），temperature 0。成本一律按 deepseek-v4-flash 列表价计，方便横向比较，不是网关的实际账单。
+上一轮用 `deepseek-v4-flash` 跑过的部分结果保留在 [access_paths_deepseek-v4-flash.md](docs/metrics/access_paths_deepseek-v4-flash.md)，用来核对结论是否依赖模型版本。
+
+### 规划器
+
+一次 LLM 调用（每题约 $0.0003，回复截断时加倍预算重试一次）只看视图的目录信息（列名、年份范围），给出两样东西：
+题型（lookup：要的公司都点名了 / join：要先找到没点名的公司 / aggregate：要扫一个行业）和所需字段，
+所需字段都在表里就算"被视图覆盖"（数据库里"用视图回答查询"的包含判断）。策略是按单路径实验里发现的机制写的规则，没有拿分数去拟合：
+
+| 策略 | lookup | join / aggregate，被覆盖 | join / aggregate，未覆盖 |
+|---|---|---|---|
+| `sql_first` | index | view_sql | view_sql（不看覆盖） |
+| `sql_escalate` | index | view_sql，答 null 再升级 | 同左 |
+| `coverage` | index | view_sql | scan（放得下）/ agent |
+| `coverage_lazy` | index | view_sql | scan（放得下）/ view_lazy |
+| `coverage_lazy_always` | index | view_sql | view_lazy |
+
+评估时按选中的路径重放它的记录（同一请求有缓存、temperature 0），再加上分类调用的成本和延迟。
 
 ---
 
 ## 结果
 
-见下方「核心结果」，均为本机 2×A100 真实跑出（`docs/results.md` 与 `outputs/*.json` 为产物）。
+所有数字来自 [docs/metrics/](docs/metrics/) 里的结果文件；单次运行的 1–2 题之差在噪声范围内（见发现 6）。
 
-### 1) 混合检索：多跳召回显著优于单路（51 条多跳 QA）
-| 方法 | Recall@5 | Recall@10 | MRR | nDCG@5 | 多跳全链 Hit@5 |
+### 基础题集（63 题）准确率
+
+| 干扰公司 | scan | index | index_join | view | view_sql | agent |
+|---|---|---|---|---|---|---|
+| 0 | 1.000 | 0.857 | 1.000 | 1.000 | 1.000 | 1.000 |
+| 54 | 1.000 | 0.698 | 0.825 | 1.000 | 1.000 | 1.000 |
+| 180 | 0.952 | 0.667 | 0.762 | 0.984 | 1.000 | 0.873 |
+| 540 | 放不下 | 0.667 | 0.730 | 0.921 | 1.000 | 0.841 |
+
+每题成本（美元）和延迟中位数（秒），180 家干扰时：scan $0.00331 / 7.1 s；index $0.00021 / 3.2 s；view_sql 每题 $0.00053、建表一次 $0.46 / 7.4 s；agent $0.00157 / 7.5 s。
+完整表（分题型、token、缓存命中）：[access_paths_deepseek-v4.1-flash.md](docs/metrics/access_paths_deepseek-v4.1-flash.md)。
+
+### 表外题集（52 题）准确率
+
+| 干扰公司 | scan | index | index_join | view | view_sql | view_lazy（只跑 join + aggregate） | agent |
+|---|---|---|---|---|---|---|---|
+| 0 | 1.000 | 0.923 | 1.000 | 0.019 | 0.000 | 1.000 | 1.000 |
+| 54 | 1.000 | 0.712 | 0.731 | 0.000 | 0.000 | 1.000 | 0.981 |
+| 180 | 1.000 | 0.731 | 0.731 | 0.000 | 0.000 | 1.000 | 0.942 |
+| 540 | 放不下 | 0.692 | 0.692 | 0.000 | 0.000 | 0.900（聚合 1.00，连接 0.75） | 0.904（聚合 0.17） |
+
+view_lazy 每题 $0.0048 / $0.0051 / $0.0079 / $0.0142，延迟中位数 58 / 72 / 156 / 386 秒（0 / 54 / 180 / 540 家干扰）：聚合题要现场抽几十到上百家公司的文档。
+完整表：[access_paths_deepseek-v4.1-flash-oos.md](docs/metrics/access_paths_deepseek-v4.1-flash-oos.md)。
+
+### 发现
+
+1. **前缀缓存让"RAG 更便宜"的理由基本消失，长上下文剩下的代价是延迟和窗口。** scan 在 55 万 token 时缓存命中 98%，每题 $0.0033，
+   基础题 0.952、表外题 1.000；比 index 贵约 16 倍，但绝对值很小。真正的硬分界是放不下：540 家干扰时约 1.6M token，scan 不可用。
+2. **RAG 的多跳失败是连接问题，不是排序问题。** 供应链题（问题里没有供应商名字）index 在所有规模、两个模型版本上都是 0 分；
+   显式连接（index_join）在无干扰时修到 1.0，有干扰时停在 0.50–0.625（相似的供应商名把正确报告挤出 top-k）。
+   行业聚合 top-k 天生做不了：54 家干扰时 0.08，180 家起为 0。
+3. **"LLM 读表"会数错，"LLM 写 SQL"不会，但前提是给它目录信息。** 540 家干扰时视图有 1,638 行，view 在 12 道聚合题上 4 次运行都是 0.583，
+   view_sql 4 次都是 1.000。view_sql 的三版迭代（[view_sql_iterations.md](docs/metrics/view_sql_iterations.md)）：只给表结构 0.841 → 加示例行和外键 0.952 → 加取值目录 1.000（无干扰时）。
+   失败都来自同一处：抽取出的自由文本取值（`锂电池正极材料` 和 `正极材料`）对不上；模型看不到数据时会陷入长时间推理、用完输出预算。
+4. **视图在表外问题上失败得"响亮"，但先失败一次很贵。** view 在 52 道表外题上 51 题答 null，view_sql 52 题全答 null（会写出 `SELECT NULL AS 研发费用`），
+   所以"答 null 就升级"能救回准确率；但 view_sql 在缺列时会长时间推理，每题 $0.0019–0.0023、延迟中位数 18–25 秒，是正常查询的约 4 倍钱、3 倍时间。
+   事先做覆盖判断只要每题约 $0.00007。
+5. **按需物化补上了 scan 放不下之后的空档。** 540 家干扰时，表外的行业聚合题 agent 只有 0.167（12 步翻不完一个 91 家公司的行业），
+   view_lazy 用现有表选出该行业的公司、只抽这些公司的研发费用，6 道全对。代价是延迟：540 家干扰时每题中位数 386 秒、$0.014，
+   适合"答不出来就没有答案"的场景，不适合交互。连接题有一道在最后写 SQL 时两次用完输出预算没给答案（0.75）。
+   做这条路径时踩过两个自己的坑，都记在这里：重试请求和第一次一模一样，被响应缓存直接返回了同样的空回复（重试等于没做）；
+   选行的 SQL 被"给模型看的结果最多 50 行"截断了，91 家只抽了 50 家。修完后才是上面的数字。
+6. **temperature 0 不是确定的。** 同一道聚合题重复问 4 次，180 家干扰时 scan 的单次准确率在 0.75–0.92 之间、view 在 0.67–1.00 之间（[stability_deepseek-v4.1-flash_180_aggregate.json](docs/metrics/stability_deepseek-v4.1-flash_180_aggregate.json)），
+   单次运行差 1–2 题不能当结论。scan 在 55 万 token 时错的 3 道都是计数题，其中 2 道用完了 4096 个输出 token 没给答案；把预算放到 16384 重问，3 道里对了 2 道，而且重问时用的 token 都不到 4096
+   （[scan_budget_probe](docs/metrics/scan_budget_probe_deepseek-v4.1-flash_180.json)）。所以不是单纯的预算不够，而是"枚举一整个行业"这类题在长上下文里不稳定。
+7. **检索在正确文档内部也会排错。** 表外的资产负债率题，index 取回的 8 个块全是正确公司的，但带资产负债率的财务表块被同公司的简介、研报块挤出 top-8（54 家干扰起 oos_lookup 只有 0.72–0.78）。
+8. **两个模型版本结论一致。** index 的 0.857 / 0.698 / 0.667、供应链 0 分在 v4-flash 和 v4.1-flash 上逐格相同；scan 和 view 的差别在噪声范围内。
+
+### 规划器（基础 + 表外，共 115 题）
+
+[planner_deepseek-v4.1-flash_base+oos.md](docs/metrics/planner_deepseek-v4.1-flash_base+oos.md)，分类器用原始问题；"$/q" 是每题查询成本，"@1000" 加上按 1000 题摊销的建表成本。
+
+| 干扰公司 | 策略 | 准确率 | $/q | $/q @1000 | 平均 / 中位延迟 s |
 |---|---|---|---|---|---|
-| Dense（FAISS · bge-zh） | 0.441 | 0.657 | 0.453 | 0.339 | 0.000 |
-| BM25（jieba） | 0.255 | 0.677 | 0.157 | 0.130 | 0.216 |
-| **Hybrid（RRF）** | **0.569** | **0.784** | **0.596** | **0.469** | **0.255** |
-| Hybrid + Reranker | 0.304 | 0.745 | 0.262 | 0.198 | 0.078 |
+| 180 | 单一路径 scan | 0.974 | 0.00265 | 0.00265 | 8.3 / 7.0 |
+| 180 | 单一路径 agent | 0.904 | 0.00134 | 0.00134 | 11.5 / 6.5 |
+| 180 | sql_escalate（答 null 再升级） | 0.965 | 0.00116 | 0.00162 | 15.9 / 7.9 |
+| 180 | **coverage**（事先判断覆盖） | **0.965** | **0.00079** | **0.00125** | **10.9 / 7.9** |
+| 180 | 事后变体：未覆盖的 lookup 走 agent | 1.000 | 0.00087 | 0.00133 | 11.7 / 9.4 |
+| 180 | oracle（事后最便宜的正确路径） | 1.000 | 0.00034 | 0.00080 | 4.1 / 3.2 |
+| 540 | 单一路径 agent（scan 放不下） | 0.870 | 0.00144 | 0.00144 | 13.0 / 6.8 |
+| 540 | sql_escalate | 0.904 | 0.00137 | 0.00272 | 18.0 / 8.1 |
+| 540 | coverage | 0.904 | 0.00093 | 0.00227 | 12.1 / 8.1 |
+| 540 | **coverage_lazy** | **0.939** | 0.00181 | 0.00315 | 32.9 / 8.1 |
+| 540 | 事后变体：未覆盖的 lookup 走 agent | 0.991 | 0.00191 | 0.00326 | 33.9 / 9.3 |
+| 540 | oracle | 1.000 | 0.00114 | 0.00248 | 21.4 / 3.6 |
 
-> Hybrid 相比 Dense：Recall@5 **+29%**、MRR **+32%**、nDCG@5 **+38%**。Dense 单路的**多跳全链命中为 0**（跨年财务表语义高度相似，难同时召回两跳证据），靠 BM25 的年份/实体 token 互补，RRF 融合后全链命中升至 **0.255**——印证混合检索对多跳问答的必要性。
->
-> **消融发现（有深度的反直觉结果）**：朴素 cross-encoder reranker 在多跳场景**反而有害**（Hit@5 0.255→0.078、MRR 0.596→0.262）。它按单条 query-doc 相关性重排，会把**间接相关**的第二跳证据（另一年报/供应商报告）挤出 top-k。这说明多跳检索需要**多跳感知的重排**（future work），不能直接套用单跳 reranker——RRF 融合在多跳上仍是最优。
+- **分类器**：127 个不同的问题文本，题型和覆盖判断都是 1.000；改写过的问题上题型 0.984、覆盖 1.000。第一版没有截断重试时题型只有 0.921，错的全是回复被截断解析不出来。
+- **事先判断覆盖 vs 答 null 再升级**：准确率一样，但升级要先在 view_sql 上白跑一次，每题贵 46%（180 家）/ 47%（540 家），平均延迟多 45% / 48%。
+- **分类调用本身有延迟**：同一策略用真实分类器比用标准答案的中位延迟多约 4.5 秒（180 家 7.9 vs 3.3 秒），这是推理模型做路由的代价。
+- **事后变体不是预先设计的**：看到发现 7 之后才加的，只说明"检索在表格块上的排序问题"是剩下差距的主要来源，不能当作规划器的成绩。
 
-### 2) 端到端 Agentic RAG（vLLM · Qwen2.5-7B-Instruct，n=10）
-| 答案准确率 | 引用覆盖率 | 忠实度(Judge) | 答案相关性(Judge) | 平均自纠错轮数 | 平均时延 |
-|---|---|---|---|---|---|
-| **0.68** | **0.95** | **0.70** | **0.80** | 1.2 | 6.87s |
+### 选择规则
 
-### 3) LoRA SFT（trl＋peft · Qwen2.5-0.5B）
-- 训练 loss **0.98 → 0.04** 收敛；in-domain 答案准确率 **0.825 → 0.900（+7.5pct）**（`outputs/sft_metrics.json`）
+在这组实验的条件下（语料版式整齐、模型 deepseek-v4.1-flash、前缀缓存读价约为输入的 1/50）：
 
-### 4) GRPO 后训练（trl · 奖励复用评测指标）
-- 组合奖励 **2.53 → 2.79（+0.26）**，KL 受控（<0.03）；分量：正确性 0.70 / 引用 1.0 / 格式 0.5 / 无幻觉 0.59（`outputs/grpo_metrics.json`）
+1. **语料放得进上下文、每份语料要回答的问题不到约 250 道**：全部走 scan。准确率最高（180 家干扰时 0.974），不用建任何东西。
+   250 是 180 家干扰时 coverage 规划器摊上 $0.46 建表费后追平 scan 的题数。
+2. **问题点名了实体（lookup）**：走 index，最便宜（每题约 $0.0002）。但要的字段在财务表块里时，检索可能把表块排出去（发现 7）。
+3. **要连接或聚合、且字段都在视图里**：建视图，用 SQL 查（view_sql），不要让模型读表。要给 SQL 生成提供目录：示例行、外键、分类列的全部取值、年份范围。
+4. **要连接或聚合、字段不在视图里**：放得下就 scan；放不下，连接走 agent，聚合走按需物化（view_lazy），能接受几分钟延迟时才用。
+5. **事先做覆盖判断，不要等 null 再升级**：同样的准确率，便宜约三分之一。
+6. **单次运行差 1–2 题不算差别。**
 
-### 5) vLLM 推理服务（A100 单卡）
-- 吞吐 **QPS@16 = 7.16**，p50 时延 **1.97s**；7B 多跳算例答对（120→158.7 亿 ⇒ **32.2%**）（`outputs/serve_metrics.json`）
+### 局限
 
-### 6) 分布式（P8）
-- **Ray** 并行评测：51 QA / 2 worker，wall **13.12s**，指标与串行完全一致
-- **FSDP** 2×A100 多卡 SFT：8 步 loss 0.954、runtime 41.6s（验证多卡训练通路）
+- **语料是合成的、版式整齐。** 公司名不会写成别名，数据没有重述，资料之间不矛盾；长上下文在"字面完全匹配"的条件下到 55 万 token 仍然很准，
+  NoLiMa 那种无字面重合的难度没有测。规划器的题型分类在这里是 1.000，在真实问题上会更难。
+- **视图的表结构是我照着基础题集设计的**，表外题集是为了测这一点专门加的；真实系统里覆盖率会更低、覆盖判断也会更难。
+- 只有一个模型家族（DeepSeek flash）、一种语言（中文）。成本按列表价算，不是实际账单。
+- 时间有限，每个格子大多只跑一次；稳定性只在聚合题上做了 4 次重复。
 
-### Roadmap 对照（P0–P8 全部落地）
+### 已有工作和区别
 
-| 阶段 | 内容 | 状态 | 关键产物 |
-|---|---|---|---|
-| P0 | 稳定运行层（统一配置/CLI/smoke test） | ✅ | `config.py`·`cli.py`·`tests/`（14 passed） |
-| P1 | 金融数据 Ingestion | ✅ | 54 raw → 252 chunks |
-| P2 | FAISS+BM25 混合检索 | ✅ | Hybrid Recall@5 0.569 |
-| P3 | 多跳 QA 合成 | ✅ | 51 条可追溯多跳 QA |
-| P4 | Judge 与 Benchmark | ✅ | `docs/results.md` |
-| P5 | LoRA/SFT | ✅ | acc 0.825→0.90 |
-| P6 | GRPO 后训练 | ✅ | reward 2.53→2.79 |
-| P7 | vLLM 推理服务 | ✅ | QPS 7.16 / p50 1.97s |
-| P8 | Ray + FSDP 调度 | ✅ | Ray 评测 13.12s / FSDP 2×A100 |
+| 工作 | 做了什么 | 和本项目的区别 |
+|---|---|---|
+| Self-Route（arXiv 2407.16833） | RAG 和长上下文之间路由，模型自认答不了就退回长上下文 | 即本项目的"答 null 再升级"基线；成本按 token 算，不含前缀缓存价格，也没有视图类路径 |
+| LaRA（2502.09977） | RAG 与长上下文基准，结论是没有银弹、取决于任务类型 | 本项目给出具体的机制（连接键不在问题里、聚合）和随规模的分界点 |
+| Pre-Route（2605.10235）、EDAR（2609.35831） | 事前推理路由 / 按首批输出 token 的熵升级到长上下文 | 只在 RAG 与长上下文两条路径之间选；本项目加了视图、按需物化和覆盖判断 |
+| DocSage（2603.11798） | 动态发现表结构、抽成关系表、用 SQL 做多文档多实体问答 | 最接近 view_sql / view_lazy；本项目不提新系统，量的是它和 scan、RAG、agent 的分界点与成本 |
+| TAG（2408.14717） | 指出 Text2SQL 和 RAG 各只覆盖一部分问题 | 本项目在同一组题上把两者和长上下文、agent 一起量 |
+| Palimpzest（2405.14696）、Abacus（2505.14661）、LOTUS（2407.11418）、DocETL（2410.12189）、Aryn/Luna（2409.00847）、EnumGRO（2606.03152）、RUBICON（2604.21413） | 语义算子、基于成本的优化器、文档处理流水线和查询规划 | 它们是系统；本项目是规划所需的实测：前缀缓存价格下的盈亏平衡点、按查询量摊销的建表成本、失败模式和可检测的回退信号 |
+| SemReuse（2610.16035） | 跨查询复用缓存的语义过滤结果 | 和 view_lazy 的"抽过的列被后续问题复用"思路相近；本项目没有正确性保证 |
 
-> 说明：训练与端到端评测的规模为 **smoke 级**（小语料、小模型、少步数），重在验证**全链路打通与相对提升**；脚本均可切换至 7B/更大步数做完整训练（见 `config/*.yaml` 注释）。
-
-结果文件：检索与端到端评测见 [docs/results.md](docs/results.md)；LoRA SFT、GRPO、vLLM 服务的原始指标文件（`outputs/*.json`）尚未提交，补齐后放进 [docs/metrics/](docs/metrics/)。
+以上只读了摘要（2026-11-09 检索）。在这些摘要里没有看到：把 API 前缀缓存价格作为一等成本变量、按语料规模和查询量算盈亏平衡点；把"连接键不在问题里"作为受控维度；
+对模型自建的视图做覆盖判断并和"答 null 再升级"比较代价。
 
 ---
 
 ## 复现
 
-### 快速开始
-
 ```bash
-# 1) 安装核心 RAG 依赖（建议独立 conda/venv）
-make setup                       # pip install -r requirements.txt && pip install -e .
+git clone https://github.com/cowdedroyal-lab/langgraph-agentic-workflow.git && cd langgraph-agentic-workflow
+python3 -m venv .venv && . .venv/bin/activate
+pip install torch --index-url https://download.pytorch.org/whl/cpu
+pip install rank-bm25 jieba pydantic rich numpy faiss-cpu sentence-transformers python-dotenv pytest langchain-core
+python -m pytest -q tests/test_access.py                   # 10 个离线测试
 
-# 2) 构建语料 + 索引（P1 + P3 + P2）
-make corpus                      # 合成金融语料 → ingest → 多跳 QA
-make index                       # FAISS + BM25 索引
-
-# 3) 跑一条多跳问答（打印自纠错节点轨迹）
-make demo ARGS='-q "山河酒业2023年营业收入较2021年增长了多少？"'
-
-# 4) 评测（检索 + 端到端 → docs/results.md）
-make bench                       # 单独检索：make bench ARGS='--mode retrieval'
-
-# 5) 训练（可选，需 GPU）
-make install-train
-make prepare-data && make sft    # LoRA SFT（trl+peft）
-make grpo                        # GRPO 后训练
-
-# 6) vLLM 服务（可选，需 GPU）
-make install-serve
-HF_HUB_OFFLINE=1 VLLM_GPU=1 VLLM_GPU_UTIL=0.9 make serve   # 起 Qwen2.5-7B-Instruct
-make health                      # QPS / 延迟探测
-LLM_BACKEND=vllm make demo ARGS='-q "..."'                 # 图改用 vLLM 后端
-
-# 7) 分布式（可选）
-make install-ray && make ray                                # Ray 并行评测
-accelerate launch --config_file config/accelerate_fsdp.yaml \
-    training/sft_lora.py --config config/sft_lora.yaml      # FSDP 2×A100
+# LLM 接口：任何 OpenAI 兼容接口
+export ACCESS_BASE_URL=http://127.0.0.1:3425/v1 ACCESS_API_KEY=... ACCESS_MODEL=<模型名>
+export PYTHONPATH=src TOKENIZERS_PARALLELISM=false
+python -m agentic_rag.access.run --sizes 0 54 180 540 --paths scan index index_join view view_sql agent
+python -m agentic_rag.access.run --qset oos --sizes 0 54 180 540 --paths scan index index_join view view_sql agent
+python -m agentic_rag.access.run --qset oos --hops oos_join oos_aggregate --sizes 0 54 180 540 --paths view_lazy
+python -m agentic_rag.access.stability --size 180 --paths scan view view_sql   # 重复性
+python -m agentic_rag.access.planner --qsets base oos                         # 规划器重放
 ```
 
-后端可切换：`LLM_BACKEND=ollama|vllm`；嵌入 `EMBEDDINGS_BACKEND=bge|nomic|hashing`（三级兜底，无模型/系统依赖时仍可跑通）。全部运行参数见 `.env.example`。
+- 第一次跑 index 会下载 `BAAI/bge-base-zh-v1.5`（约 400 MB），连不上 HuggingFace 时设 `HF_ENDPOINT=https://hf-mirror.com`。
+- LLM 响应按请求内容缓存在 `outputs/access/cache`，重跑不花钱；结果写到 `outputs/access/<模型标签>/` 和 `docs/metrics/`。
+- 本轮完整跑一遍约 $4.7（按 deepseek-v4-flash 列表价，缓存里 13,417 次调用），其中 540 家干扰的建表约 $1.34。
+- 代码：`src/agentic_rag/access/`（`world.py` 语料、`questions.py` 题目与标准答案、`paths.py` 七条路径、`planner.py` 规划器、`stability.py` 重复性、`run.py` 入口）。
 
-### 项目结构
+---
 
-```
-src/agentic_rag/
-├── config.py / schema.py / log.py / io_utils.py   # 单一配置源 / 统一数据契约 / 日志 / IO
-├── llm.py / embeddings.py                          # Ollama·vLLM 工厂 / bge→nomic→hashing
-├── ingestion/   (P1)  parsers·chunking·metadata·pipeline·synthetic
-├── retrieval/   (P2)  dense_faiss·sparse_bm25·hybrid(RRF)·rerank·base
-├── synthesis/   (P3)  samplers·generators·pipeline
-├── graph/             state·nodes·edges·build（自纠错图）
-└── eval/        (P4)  retrieval_metrics·generation_metrics·judge·benchmark
-training/   (P5/P6)  prepare_data·sft_lora·grpo_train·rewards
-serve/      (P7)     vllm_server.sh·healthcheck·openai_client
-ray_jobs/   (P8)     parallel_ingest·parallel_bench   + config/accelerate_fsdp.yaml
-config/             default.yaml·sft_lora·llamafactory_sft·grpo·verl_grpo·accelerate_fsdp
-cli.py / main.py / Makefile / tests/                # 统一 CLI / 向后兼容入口 / 一键命令 / pytest
-```
+## 早期版本：LangGraph 自纠错 RAG
+
+这个仓库最初是一个 LangGraph 自纠错 RAG（route → retrieve → grade → generate → grade 闭环），检索用 FAISS + BM25 的 RRF 融合。
+其中有结果文件支撑的是检索对比（51 条合成多跳 QA，[docs/results.md](docs/results.md)）：
+
+| 方法 | Recall@5 | MRR | 多跳全链 Hit@5 |
+|---|---|---|---|
+| Dense（FAISS · bge-zh） | 0.441 | 0.453 | 0.000 |
+| BM25（jieba） | 0.255 | 0.157 | 0.216 |
+| Hybrid（RRF） | 0.569 | 0.596 | 0.255 |
+| Hybrid + Reranker | 0.304 | 0.262 | 0.078 |
+
+重排在多跳上有害，这和上面的发现 2 是同一个原因：重排逐个文档对问题打分，第二跳文档本来就不像问题。
+仓库里还有 LoRA / GRPO 训练、vLLM 服务、Ray 并行评测的代码（`training/`、`serve/`、`ray_jobs/`），只在小模型、少步数上验证过链路能跑通，
+没有提交可复查的结果文件，不作为本项目的结论。架构说明见 [docs/architecture.md](docs/architecture.md)。
 
 ---
 
 ## 证据清单
 
-[.portfolio/project.yaml](.portfolio/project.yaml) 记录了这个项目用到的技术、我做的事、关键取舍、实验发现和指标，每一项都指向仓库里的证据（代码、结果表）。
-校验：`profile-atlas check .`
-
----
+[.portfolio/project.yaml](.portfolio/project.yaml) 记录了用到的技术、做的事、取舍、发现和指标，每一项都指向仓库里的证据。校验：`profile-atlas check .`
 
 ## License
-MIT。本项目语料为**合成虚构**数据，公司名/财务数字均非真实，仅用于演示与复现。
+
+MIT。语料为合成虚构数据，公司名和财务数字都不是真实的。

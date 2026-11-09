@@ -1,0 +1,3859 @@
+{
+  "model": "deepseek-v4.1-flash",
+  "qsets": [
+    "base",
+    "oos"
+  ],
+  "classifier": {
+    "original": {
+      "n": 127,
+      "class_accuracy": 1.0,
+      "coverage_accuracy": 1.0,
+      "class_confusion": {
+        "lookup->lookup": 84,
+        "aggregate->aggregate": 30,
+        "join->join": 13
+      },
+      "coverage_confusion": {
+        "uncovered->uncovered": 52,
+        "covered->covered": 75
+      },
+      "usd_per_q": 0.0003378,
+      "coverage_errors": []
+    },
+    "paraphrased": {
+      "n": 127,
+      "class_accuracy": 0.9843,
+      "coverage_accuracy": 1.0,
+      "class_confusion": {
+        "lookup->None": 2,
+        "lookup->lookup": 82,
+        "aggregate->aggregate": 30,
+        "join->join": 13
+      },
+      "coverage_confusion": {
+        "uncovered->uncovered": 52,
+        "covered->covered": 75
+      },
+      "usd_per_q": 0.0003936,
+      "coverage_errors": [],
+      "examples": [
+        {
+          "original": "丰收农业2020年的营业收入是多少亿元？",
+          "paraphrased": "2020年，丰收农业的营业收入为多少亿元？"
+        },
+        {
+          "original": "云岭矿业2020年的营业收入是多少亿元？",
+          "paraphrased": "云岭矿业2020年实现的营业收入是多少亿元？"
+        },
+        {
+          "original": "券商对丰收农业2023年报点评给出的投资评级是什么？",
+          "paraphrased": "券商在点评丰收农业2023年年报时，给出的投资评级是什么？"
+        },
+        {
+          "original": "在语料中所有主营农产品的公司里，2023年研发费用最高的是哪家公司？",
+          "paraphrased": "在语料里主营业务为农产品的全部公司中，哪一家在2023年的研发费用最高？"
+        },
+        {
+          "original": "在语料中所有主营包装材料的公司里，2023年营业收入超过130亿元的有几家？",
+          "paraphrased": "在语料中，主营业务为包装材料的公司里，2023年营业收入高于130亿元的有多少家？"
+        },
+        {
+          "original": "在语料中所有主营白酒的公司里，2023年销售毛利率最高的是哪家公司？",
+          "paraphrased": "在语料中所有以白酒为主营业务的公司里，哪家公司2023年的销售毛利率最高？"
+        },
+        {
+          "original": "山河酒业的玻璃瓶及包装供应商在2022年的归母净利润是多少亿元？",
+          "paraphrased": "山河酒业的玻璃瓶及包装供应商2022年的归母净利润为多少亿元？"
+        },
+        {
+          "original": "极锋材料2020年的营业收入是多少亿元？",
+          "paraphrased": "2020年极锋材料的营业收入是多少亿元？"
+        },
+        {
+          "original": "极锋材料（300022）2023年的归母净利润较2022年变化了百分之多少？（增长为正、下降为负）",
+          "paraphrased": "相较于2022年，极锋材料（300022）2023年的归母净利润变化了百分之多少？（增长为正、下降为负）"
+        },
+        {
+          "original": "长江动力的正极材料供应商，它自己的上游供应商是哪家公司？",
+          "paraphrased": "为长江动力供应正极材料的供应商，其上游供应商是哪家公司？"
+        },
+        {
+          "original": "黔源包装的归母净利润从2021年到2023年变化了多少亿元？（上升为正、下降为负）",
+          "paraphrased": "黔源包装2021年至2023年的归母净利润变动了多少亿元？（上升记为正、下降记为负）"
+        }
+      ]
+    }
+  },
+  "sizes": {
+    "0": {
+      "companies": 6,
+      "chars": 33086,
+      "n_questions": 115,
+      "scan_fits": true,
+      "view_build_usd": 0.0147,
+      "single": {
+        "scan": {
+          "accuracy": 1.0,
+          "query_usd_per_q": 0.000196,
+          "build_usd": 0.0,
+          "usd_per_q_at": {
+            "115": 0.000196,
+            "1000": 0.000196,
+            "10000": 0.000196
+          },
+          "mean_latency_s": 2.78,
+          "p50_latency_s": 2.52,
+          "per_hop": {
+            "aggregate": 1.0,
+            "cross_year": 1.0,
+            "deep_chain": 1.0,
+            "metric_change": 1.0,
+            "oos_aggregate": 1.0,
+            "oos_join": 1.0,
+            "oos_lookup": 1.0,
+            "oos_prior": 1.0,
+            "oos_report": 1.0,
+            "supply_chain": 1.0
+          }
+        },
+        "index": {
+          "accuracy": 0.887,
+          "query_usd_per_q": 0.000198,
+          "build_usd": 0.0,
+          "usd_per_q_at": {
+            "115": 0.000198,
+            "1000": 0.000198,
+            "10000": 0.000198
+          },
+          "mean_latency_s": 3.54,
+          "p50_latency_s": 3.4,
+          "per_hop": {
+            "aggregate": 1.0,
+            "cross_year": 1.0,
+            "deep_chain": 0.0,
+            "metric_change": 1.0,
+            "oos_aggregate": 1.0,
+            "oos_join": 0.0,
+            "oos_lookup": 1.0,
+            "oos_prior": 1.0,
+            "oos_report": 1.0,
+            "supply_chain": 0.0
+          }
+        },
+        "index_join": {
+          "accuracy": 1.0,
+          "query_usd_per_q": 0.000434,
+          "build_usd": 0.0,
+          "usd_per_q_at": {
+            "115": 0.000434,
+            "1000": 0.000434,
+            "10000": 0.000434
+          },
+          "mean_latency_s": 7.49,
+          "p50_latency_s": 6.83,
+          "per_hop": {
+            "aggregate": 1.0,
+            "cross_year": 1.0,
+            "deep_chain": 1.0,
+            "metric_change": 1.0,
+            "oos_aggregate": 1.0,
+            "oos_join": 1.0,
+            "oos_lookup": 1.0,
+            "oos_prior": 1.0,
+            "oos_report": 1.0,
+            "supply_chain": 1.0
+          }
+        },
+        "view": {
+          "accuracy": 0.5565,
+          "query_usd_per_q": 0.000136,
+          "build_usd": 0.0147,
+          "usd_per_q_at": {
+            "115": 0.000264,
+            "1000": 0.00015,
+            "10000": 0.000137
+          },
+          "mean_latency_s": 2.21,
+          "p50_latency_s": 2.09,
+          "per_hop": {
+            "aggregate": 1.0,
+            "cross_year": 1.0,
+            "deep_chain": 1.0,
+            "metric_change": 1.0,
+            "oos_aggregate": 0.1667,
+            "oos_join": 0.0,
+            "oos_lookup": 0.0,
+            "oos_prior": 0.0,
+            "oos_report": 0.0,
+            "supply_chain": 1.0
+          }
+        },
+        "view_sql": {
+          "accuracy": 0.5478,
+          "query_usd_per_q": 0.001224,
+          "build_usd": 0.0147,
+          "usd_per_q_at": {
+            "115": 0.001352,
+            "1000": 0.001239,
+            "10000": 0.001226
+          },
+          "mean_latency_s": 18.41,
+          "p50_latency_s": 9.62,
+          "per_hop": {
+            "aggregate": 1.0,
+            "cross_year": 1.0,
+            "deep_chain": 1.0,
+            "metric_change": 1.0,
+            "oos_aggregate": 0.0,
+            "oos_join": 0.0,
+            "oos_lookup": 0.0,
+            "oos_prior": 0.0,
+            "oos_report": 0.0,
+            "supply_chain": 1.0
+          }
+        },
+        "agent": {
+          "accuracy": 1.0,
+          "query_usd_per_q": 0.000933,
+          "build_usd": 0.0,
+          "usd_per_q_at": {
+            "115": 0.000933,
+            "1000": 0.000933,
+            "10000": 0.000933
+          },
+          "mean_latency_s": 10.08,
+          "p50_latency_s": 6.54,
+          "per_hop": {
+            "aggregate": 1.0,
+            "cross_year": 1.0,
+            "deep_chain": 1.0,
+            "metric_change": 1.0,
+            "oos_aggregate": 1.0,
+            "oos_join": 1.0,
+            "oos_lookup": 1.0,
+            "oos_prior": 1.0,
+            "oos_report": 1.0,
+            "supply_chain": 1.0
+          }
+        }
+      },
+      "oracle": {
+        "accuracy": 1.0,
+        "query_usd_per_q": 0.000149,
+        "build_usd": 0.0147,
+        "usd_per_q_at": {
+          "115": 0.000277,
+          "1000": 0.000164,
+          "10000": 0.000151
+        },
+        "mean_latency_s": 2.31,
+        "p50_latency_s": 2.18
+      },
+      "policies": {
+        "scan_or_view@original": {
+          "accuracy": 1.0,
+          "query_usd_per_q": 0.000534,
+          "build_usd": 0.0,
+          "usd_per_q_at": {
+            "115": 0.000534,
+            "1000": 0.000534,
+            "10000": 0.000534
+          },
+          "mean_latency_s": 8.86,
+          "p50_latency_s": 6.83,
+          "paths_used": {
+            "scan": 31,
+            "index": 84
+          },
+          "per_hop": {
+            "aggregate": 1.0,
+            "cross_year": 1.0,
+            "deep_chain": 1.0,
+            "metric_change": 1.0,
+            "oos_aggregate": 1.0,
+            "oos_join": 1.0,
+            "oos_lookup": 1.0,
+            "oos_prior": 1.0,
+            "oos_report": 1.0,
+            "supply_chain": 1.0
+          }
+        },
+        "sql_first@original": {
+          "accuracy": 0.913,
+          "query_usd_per_q": 0.000974,
+          "build_usd": 0.0147,
+          "usd_per_q_at": {
+            "115": 0.001102,
+            "1000": 0.000988,
+            "10000": 0.000975
+          },
+          "mean_latency_s": 15.14,
+          "p50_latency_s": 7.96,
+          "paths_used": {
+            "index": 84,
+            "view_sql": 31
+          },
+          "per_hop": {
+            "aggregate": 1.0,
+            "cross_year": 1.0,
+            "deep_chain": 1.0,
+            "metric_change": 1.0,
+            "oos_aggregate": 0.0,
+            "oos_join": 0.0,
+            "oos_lookup": 1.0,
+            "oos_prior": 1.0,
+            "oos_report": 1.0,
+            "supply_chain": 1.0
+          }
+        },
+        "sql_escalate@original": {
+          "accuracy": 1.0,
+          "query_usd_per_q": 0.000991,
+          "build_usd": 0.0147,
+          "usd_per_q_at": {
+            "115": 0.001119,
+            "1000": 0.001005,
+            "10000": 0.000992
+          },
+          "mean_latency_s": 15.38,
+          "p50_latency_s": 7.96,
+          "paths_used": {
+            "scan": 10,
+            "index": 84,
+            "view_sql": 31
+          },
+          "per_hop": {
+            "aggregate": 1.0,
+            "cross_year": 1.0,
+            "deep_chain": 1.0,
+            "metric_change": 1.0,
+            "oos_aggregate": 1.0,
+            "oos_join": 1.0,
+            "oos_lookup": 1.0,
+            "oos_prior": 1.0,
+            "oos_report": 1.0,
+            "supply_chain": 1.0
+          }
+        },
+        "coverage@original": {
+          "accuracy": 1.0,
+          "query_usd_per_q": 0.000615,
+          "build_usd": 0.0147,
+          "usd_per_q_at": {
+            "115": 0.000743,
+            "1000": 0.00063,
+            "10000": 0.000617
+          },
+          "mean_latency_s": 10.32,
+          "p50_latency_s": 7.46,
+          "paths_used": {
+            "scan": 10,
+            "index": 84,
+            "view_sql": 21
+          },
+          "per_hop": {
+            "aggregate": 1.0,
+            "cross_year": 1.0,
+            "deep_chain": 1.0,
+            "metric_change": 1.0,
+            "oos_aggregate": 1.0,
+            "oos_join": 1.0,
+            "oos_lookup": 1.0,
+            "oos_prior": 1.0,
+            "oos_report": 1.0,
+            "supply_chain": 1.0
+          }
+        },
+        "coverage_escalate@original": {
+          "accuracy": 1.0,
+          "query_usd_per_q": 0.000615,
+          "build_usd": 0.0147,
+          "usd_per_q_at": {
+            "115": 0.000743,
+            "1000": 0.00063,
+            "10000": 0.000617
+          },
+          "mean_latency_s": 10.32,
+          "p50_latency_s": 7.46,
+          "paths_used": {
+            "scan": 10,
+            "index": 84,
+            "view_sql": 21
+          },
+          "per_hop": {
+            "aggregate": 1.0,
+            "cross_year": 1.0,
+            "deep_chain": 1.0,
+            "metric_change": 1.0,
+            "oos_aggregate": 1.0,
+            "oos_join": 1.0,
+            "oos_lookup": 1.0,
+            "oos_prior": 1.0,
+            "oos_report": 1.0,
+            "supply_chain": 1.0
+          }
+        },
+        "coverage_all@original": {
+          "accuracy": 1.0,
+          "query_usd_per_q": 0.000716,
+          "build_usd": 0.0147,
+          "usd_per_q_at": {
+            "115": 0.000844,
+            "1000": 0.000731,
+            "10000": 0.000717
+          },
+          "mean_latency_s": 12.21,
+          "p50_latency_s": 10.7,
+          "paths_used": {
+            "scan": 10,
+            "index": 42,
+            "view_sql": 63
+          },
+          "per_hop": {
+            "aggregate": 1.0,
+            "cross_year": 1.0,
+            "deep_chain": 1.0,
+            "metric_change": 1.0,
+            "oos_aggregate": 1.0,
+            "oos_join": 1.0,
+            "oos_lookup": 1.0,
+            "oos_prior": 1.0,
+            "oos_report": 1.0,
+            "supply_chain": 1.0
+          }
+        },
+        "coverage_lazy@original": {
+          "accuracy": 1.0,
+          "query_usd_per_q": 0.000615,
+          "build_usd": 0.0147,
+          "usd_per_q_at": {
+            "115": 0.000743,
+            "1000": 0.00063,
+            "10000": 0.000617
+          },
+          "mean_latency_s": 10.32,
+          "p50_latency_s": 7.46,
+          "paths_used": {
+            "scan": 10,
+            "index": 84,
+            "view_sql": 21
+          },
+          "per_hop": {
+            "aggregate": 1.0,
+            "cross_year": 1.0,
+            "deep_chain": 1.0,
+            "metric_change": 1.0,
+            "oos_aggregate": 1.0,
+            "oos_join": 1.0,
+            "oos_lookup": 1.0,
+            "oos_prior": 1.0,
+            "oos_report": 1.0,
+            "supply_chain": 1.0
+          }
+        },
+        "coverage_lazy_always@original": {
+          "accuracy": 1.0,
+          "query_usd_per_q": 0.001018,
+          "build_usd": 0.0147,
+          "usd_per_q_at": {
+            "115": 0.001146,
+            "1000": 0.001033,
+            "10000": 0.001019
+          },
+          "mean_latency_s": 15.08,
+          "p50_latency_s": 7.96,
+          "paths_used": {
+            "index": 84,
+            "view_sql": 21,
+            "view_lazy": 10
+          },
+          "per_hop": {
+            "aggregate": 1.0,
+            "cross_year": 1.0,
+            "deep_chain": 1.0,
+            "metric_change": 1.0,
+            "oos_aggregate": 1.0,
+            "oos_join": 1.0,
+            "oos_lookup": 1.0,
+            "oos_prior": 1.0,
+            "oos_report": 1.0,
+            "supply_chain": 1.0
+          }
+        },
+        "posthoc_uncovered_lookup_agent@original": {
+          "accuracy": 1.0,
+          "query_usd_per_q": 0.000678,
+          "build_usd": 0.0147,
+          "usd_per_q_at": {
+            "115": 0.000806,
+            "1000": 0.000693,
+            "10000": 0.00068
+          },
+          "mean_latency_s": 11.06,
+          "p50_latency_s": 8.75,
+          "paths_used": {
+            "scan": 10,
+            "index": 42,
+            "view_sql": 21,
+            "agent": 42
+          },
+          "per_hop": {
+            "aggregate": 1.0,
+            "cross_year": 1.0,
+            "deep_chain": 1.0,
+            "metric_change": 1.0,
+            "oos_aggregate": 1.0,
+            "oos_join": 1.0,
+            "oos_lookup": 1.0,
+            "oos_prior": 1.0,
+            "oos_report": 1.0,
+            "supply_chain": 1.0
+          }
+        },
+        "scan_or_view@paraphrased": {
+          "accuracy": 1.0,
+          "query_usd_per_q": 0.000591,
+          "build_usd": 0.0,
+          "usd_per_q_at": {
+            "115": 0.000591,
+            "1000": 0.000591,
+            "10000": 0.000591
+          },
+          "mean_latency_s": 9.44,
+          "p50_latency_s": 6.75,
+          "paths_used": {
+            "scan": 33,
+            "index": 82
+          },
+          "per_hop": {
+            "aggregate": 1.0,
+            "cross_year": 1.0,
+            "deep_chain": 1.0,
+            "metric_change": 1.0,
+            "oos_aggregate": 1.0,
+            "oos_join": 1.0,
+            "oos_lookup": 1.0,
+            "oos_prior": 1.0,
+            "oos_report": 1.0,
+            "supply_chain": 1.0
+          }
+        },
+        "sql_first@paraphrased": {
+          "accuracy": 0.8957,
+          "query_usd_per_q": 0.001062,
+          "build_usd": 0.0147,
+          "usd_per_q_at": {
+            "115": 0.00119,
+            "1000": 0.001076,
+            "10000": 0.001063
+          },
+          "mean_latency_s": 16.17,
+          "p50_latency_s": 7.85,
+          "paths_used": {
+            "index": 82,
+            "view_sql": 33
+          },
+          "per_hop": {
+            "aggregate": 1.0,
+            "cross_year": 1.0,
+            "deep_chain": 1.0,
+            "metric_change": 1.0,
+            "oos_aggregate": 0.0,
+            "oos_join": 0.0,
+            "oos_lookup": 1.0,
+            "oos_prior": 0.8333,
+            "oos_report": 0.9444,
+            "supply_chain": 1.0
+          }
+        },
+        "sql_escalate@paraphrased": {
+          "accuracy": 1.0,
+          "query_usd_per_q": 0.001082,
+          "build_usd": 0.0147,
+          "usd_per_q_at": {
+            "115": 0.00121,
+            "1000": 0.001096,
+            "10000": 0.001083
+          },
+          "mean_latency_s": 16.45,
+          "p50_latency_s": 7.85,
+          "paths_used": {
+            "scan": 12,
+            "index": 82,
+            "view_sql": 33
+          },
+          "per_hop": {
+            "aggregate": 1.0,
+            "cross_year": 1.0,
+            "deep_chain": 1.0,
+            "metric_change": 1.0,
+            "oos_aggregate": 1.0,
+            "oos_join": 1.0,
+            "oos_lookup": 1.0,
+            "oos_prior": 1.0,
+            "oos_report": 1.0,
+            "supply_chain": 1.0
+          }
+        },
+        "coverage@paraphrased": {
+          "accuracy": 1.0,
+          "query_usd_per_q": 0.000672,
+          "build_usd": 0.0147,
+          "usd_per_q_at": {
+            "115": 0.000801,
+            "1000": 0.000687,
+            "10000": 0.000674
+          },
+          "mean_latency_s": 10.9,
+          "p50_latency_s": 7.57,
+          "paths_used": {
+            "scan": 12,
+            "index": 82,
+            "view_sql": 21
+          },
+          "per_hop": {
+            "aggregate": 1.0,
+            "cross_year": 1.0,
+            "deep_chain": 1.0,
+            "metric_change": 1.0,
+            "oos_aggregate": 1.0,
+            "oos_join": 1.0,
+            "oos_lookup": 1.0,
+            "oos_prior": 1.0,
+            "oos_report": 1.0,
+            "supply_chain": 1.0
+          }
+        },
+        "coverage_escalate@paraphrased": {
+          "accuracy": 1.0,
+          "query_usd_per_q": 0.000672,
+          "build_usd": 0.0147,
+          "usd_per_q_at": {
+            "115": 0.000801,
+            "1000": 0.000687,
+            "10000": 0.000674
+          },
+          "mean_latency_s": 10.9,
+          "p50_latency_s": 7.57,
+          "paths_used": {
+            "scan": 12,
+            "index": 82,
+            "view_sql": 21
+          },
+          "per_hop": {
+            "aggregate": 1.0,
+            "cross_year": 1.0,
+            "deep_chain": 1.0,
+            "metric_change": 1.0,
+            "oos_aggregate": 1.0,
+            "oos_join": 1.0,
+            "oos_lookup": 1.0,
+            "oos_prior": 1.0,
+            "oos_report": 1.0,
+            "supply_chain": 1.0
+          }
+        },
+        "coverage_all@paraphrased": {
+          "accuracy": 1.0,
+          "query_usd_per_q": 0.000773,
+          "build_usd": 0.0147,
+          "usd_per_q_at": {
+            "115": 0.000901,
+            "1000": 0.000788,
+            "10000": 0.000775
+          },
+          "mean_latency_s": 12.79,
+          "p50_latency_s": 10.59,
+          "paths_used": {
+            "scan": 12,
+            "index": 40,
+            "view_sql": 63
+          },
+          "per_hop": {
+            "aggregate": 1.0,
+            "cross_year": 1.0,
+            "deep_chain": 1.0,
+            "metric_change": 1.0,
+            "oos_aggregate": 1.0,
+            "oos_join": 1.0,
+            "oos_lookup": 1.0,
+            "oos_prior": 1.0,
+            "oos_report": 1.0,
+            "supply_chain": 1.0
+          }
+        },
+        "coverage_lazy@paraphrased": {
+          "accuracy": 1.0,
+          "query_usd_per_q": 0.000672,
+          "build_usd": 0.0147,
+          "usd_per_q_at": {
+            "115": 0.000801,
+            "1000": 0.000687,
+            "10000": 0.000674
+          },
+          "mean_latency_s": 10.9,
+          "p50_latency_s": 7.57,
+          "paths_used": {
+            "scan": 12,
+            "index": 82,
+            "view_sql": 21
+          },
+          "per_hop": {
+            "aggregate": 1.0,
+            "cross_year": 1.0,
+            "deep_chain": 1.0,
+            "metric_change": 1.0,
+            "oos_aggregate": 1.0,
+            "oos_join": 1.0,
+            "oos_lookup": 1.0,
+            "oos_prior": 1.0,
+            "oos_report": 1.0,
+            "supply_chain": 1.0
+          }
+        },
+        "coverage_lazy_always@paraphrased": {
+          "accuracy": 1.0,
+          "query_usd_per_q": 0.001075,
+          "build_usd": 0.0147,
+          "usd_per_q_at": {
+            "115": 0.001203,
+            "1000": 0.00109,
+            "10000": 0.001077
+          },
+          "mean_latency_s": 15.66,
+          "p50_latency_s": 7.85,
+          "paths_used": {
+            "scan": 2,
+            "index": 82,
+            "view_sql": 21,
+            "view_lazy": 10
+          },
+          "per_hop": {
+            "aggregate": 1.0,
+            "cross_year": 1.0,
+            "deep_chain": 1.0,
+            "metric_change": 1.0,
+            "oos_aggregate": 1.0,
+            "oos_join": 1.0,
+            "oos_lookup": 1.0,
+            "oos_prior": 1.0,
+            "oos_report": 1.0,
+            "supply_chain": 1.0
+          }
+        },
+        "posthoc_uncovered_lookup_agent@paraphrased": {
+          "accuracy": 1.0,
+          "query_usd_per_q": 0.000732,
+          "build_usd": 0.0147,
+          "usd_per_q_at": {
+            "115": 0.00086,
+            "1000": 0.000746,
+            "10000": 0.000733
+          },
+          "mean_latency_s": 11.61,
+          "p50_latency_s": 8.69,
+          "paths_used": {
+            "scan": 12,
+            "index": 42,
+            "view_sql": 21,
+            "agent": 40
+          },
+          "per_hop": {
+            "aggregate": 1.0,
+            "cross_year": 1.0,
+            "deep_chain": 1.0,
+            "metric_change": 1.0,
+            "oos_aggregate": 1.0,
+            "oos_join": 1.0,
+            "oos_lookup": 1.0,
+            "oos_prior": 1.0,
+            "oos_report": 1.0,
+            "supply_chain": 1.0
+          }
+        },
+        "scan_or_view@gold": {
+          "accuracy": 1.0,
+          "query_usd_per_q": 0.000189,
+          "build_usd": 0.0,
+          "usd_per_q_at": {
+            "115": 0.000189,
+            "1000": 0.000189,
+            "10000": 0.000189
+          },
+          "mean_latency_s": 3.17,
+          "p50_latency_s": 3.15,
+          "paths_used": {
+            "scan": 31,
+            "index": 84
+          },
+          "per_hop": {
+            "aggregate": 1.0,
+            "cross_year": 1.0,
+            "deep_chain": 1.0,
+            "metric_change": 1.0,
+            "oos_aggregate": 1.0,
+            "oos_join": 1.0,
+            "oos_lookup": 1.0,
+            "oos_prior": 1.0,
+            "oos_report": 1.0,
+            "supply_chain": 1.0
+          }
+        },
+        "sql_first@gold": {
+          "accuracy": 0.913,
+          "query_usd_per_q": 0.000629,
+          "build_usd": 0.0147,
+          "usd_per_q_at": {
+            "115": 0.000757,
+            "1000": 0.000643,
+            "10000": 0.00063
+          },
+          "mean_latency_s": 9.45,
+          "p50_latency_s": 3.62,
+          "paths_used": {
+            "index": 84,
+            "view_sql": 31
+          },
+          "per_hop": {
+            "aggregate": 1.0,
+            "cross_year": 1.0,
+            "deep_chain": 1.0,
+            "metric_change": 1.0,
+            "oos_aggregate": 0.0,
+            "oos_join": 0.0,
+            "oos_lookup": 1.0,
+            "oos_prior": 1.0,
+            "oos_report": 1.0,
+            "supply_chain": 1.0
+          }
+        },
+        "sql_escalate@gold": {
+          "accuracy": 1.0,
+          "query_usd_per_q": 0.000646,
+          "build_usd": 0.0147,
+          "usd_per_q_at": {
+            "115": 0.000774,
+            "1000": 0.00066,
+            "10000": 0.000647
+          },
+          "mean_latency_s": 9.69,
+          "p50_latency_s": 3.62,
+          "paths_used": {
+            "scan": 10,
+            "index": 84,
+            "view_sql": 31
+          },
+          "per_hop": {
+            "aggregate": 1.0,
+            "cross_year": 1.0,
+            "deep_chain": 1.0,
+            "metric_change": 1.0,
+            "oos_aggregate": 1.0,
+            "oos_join": 1.0,
+            "oos_lookup": 1.0,
+            "oos_prior": 1.0,
+            "oos_report": 1.0,
+            "supply_chain": 1.0
+          }
+        },
+        "coverage@gold": {
+          "accuracy": 1.0,
+          "query_usd_per_q": 0.00027,
+          "build_usd": 0.0147,
+          "usd_per_q_at": {
+            "115": 0.000398,
+            "1000": 0.000285,
+            "10000": 0.000272
+          },
+          "mean_latency_s": 4.63,
+          "p50_latency_s": 3.38,
+          "paths_used": {
+            "scan": 10,
+            "index": 84,
+            "view_sql": 21
+          },
+          "per_hop": {
+            "aggregate": 1.0,
+            "cross_year": 1.0,
+            "deep_chain": 1.0,
+            "metric_change": 1.0,
+            "oos_aggregate": 1.0,
+            "oos_join": 1.0,
+            "oos_lookup": 1.0,
+            "oos_prior": 1.0,
+            "oos_report": 1.0,
+            "supply_chain": 1.0
+          }
+        },
+        "coverage_escalate@gold": {
+          "accuracy": 1.0,
+          "query_usd_per_q": 0.00027,
+          "build_usd": 0.0147,
+          "usd_per_q_at": {
+            "115": 0.000398,
+            "1000": 0.000285,
+            "10000": 0.000272
+          },
+          "mean_latency_s": 4.63,
+          "p50_latency_s": 3.38,
+          "paths_used": {
+            "scan": 10,
+            "index": 84,
+            "view_sql": 21
+          },
+          "per_hop": {
+            "aggregate": 1.0,
+            "cross_year": 1.0,
+            "deep_chain": 1.0,
+            "metric_change": 1.0,
+            "oos_aggregate": 1.0,
+            "oos_join": 1.0,
+            "oos_lookup": 1.0,
+            "oos_prior": 1.0,
+            "oos_report": 1.0,
+            "supply_chain": 1.0
+          }
+        },
+        "coverage_all@gold": {
+          "accuracy": 1.0,
+          "query_usd_per_q": 0.000371,
+          "build_usd": 0.0147,
+          "usd_per_q_at": {
+            "115": 0.000499,
+            "1000": 0.000386,
+            "10000": 0.000372
+          },
+          "mean_latency_s": 6.52,
+          "p50_latency_s": 6.02,
+          "paths_used": {
+            "scan": 10,
+            "index": 42,
+            "view_sql": 63
+          },
+          "per_hop": {
+            "aggregate": 1.0,
+            "cross_year": 1.0,
+            "deep_chain": 1.0,
+            "metric_change": 1.0,
+            "oos_aggregate": 1.0,
+            "oos_join": 1.0,
+            "oos_lookup": 1.0,
+            "oos_prior": 1.0,
+            "oos_report": 1.0,
+            "supply_chain": 1.0
+          }
+        },
+        "coverage_lazy@gold": {
+          "accuracy": 1.0,
+          "query_usd_per_q": 0.00027,
+          "build_usd": 0.0147,
+          "usd_per_q_at": {
+            "115": 0.000398,
+            "1000": 0.000285,
+            "10000": 0.000272
+          },
+          "mean_latency_s": 4.63,
+          "p50_latency_s": 3.38,
+          "paths_used": {
+            "scan": 10,
+            "index": 84,
+            "view_sql": 21
+          },
+          "per_hop": {
+            "aggregate": 1.0,
+            "cross_year": 1.0,
+            "deep_chain": 1.0,
+            "metric_change": 1.0,
+            "oos_aggregate": 1.0,
+            "oos_join": 1.0,
+            "oos_lookup": 1.0,
+            "oos_prior": 1.0,
+            "oos_report": 1.0,
+            "supply_chain": 1.0
+          }
+        },
+        "coverage_lazy_always@gold": {
+          "accuracy": 1.0,
+          "query_usd_per_q": 0.000673,
+          "build_usd": 0.0147,
+          "usd_per_q_at": {
+            "115": 0.000801,
+            "1000": 0.000688,
+            "10000": 0.000674
+          },
+          "mean_latency_s": 9.39,
+          "p50_latency_s": 3.62,
+          "paths_used": {
+            "index": 84,
+            "view_sql": 21,
+            "view_lazy": 10
+          },
+          "per_hop": {
+            "aggregate": 1.0,
+            "cross_year": 1.0,
+            "deep_chain": 1.0,
+            "metric_change": 1.0,
+            "oos_aggregate": 1.0,
+            "oos_join": 1.0,
+            "oos_lookup": 1.0,
+            "oos_prior": 1.0,
+            "oos_report": 1.0,
+            "supply_chain": 1.0
+          }
+        },
+        "posthoc_uncovered_lookup_agent@gold": {
+          "accuracy": 1.0,
+          "query_usd_per_q": 0.000333,
+          "build_usd": 0.0147,
+          "usd_per_q_at": {
+            "115": 0.000461,
+            "1000": 0.000348,
+            "10000": 0.000335
+          },
+          "mean_latency_s": 5.37,
+          "p50_latency_s": 4.71,
+          "paths_used": {
+            "scan": 10,
+            "index": 42,
+            "view_sql": 21,
+            "agent": 42
+          },
+          "per_hop": {
+            "aggregate": 1.0,
+            "cross_year": 1.0,
+            "deep_chain": 1.0,
+            "metric_change": 1.0,
+            "oos_aggregate": 1.0,
+            "oos_join": 1.0,
+            "oos_lookup": 1.0,
+            "oos_prior": 1.0,
+            "oos_report": 1.0,
+            "supply_chain": 1.0
+          }
+        }
+      }
+    },
+    "54": {
+      "companies": 60,
+      "chars": 331101,
+      "n_questions": 115,
+      "scan_fits": true,
+      "view_build_usd": 0.1507,
+      "single": {
+        "scan": {
+          "accuracy": 1.0,
+          "query_usd_per_q": 0.000952,
+          "build_usd": 0.0,
+          "usd_per_q_at": {
+            "115": 0.000952,
+            "1000": 0.000952,
+            "10000": 0.000952
+          },
+          "mean_latency_s": 5.76,
+          "p50_latency_s": 5.38,
+          "per_hop": {
+            "aggregate": 1.0,
+            "cross_year": 1.0,
+            "deep_chain": 1.0,
+            "metric_change": 1.0,
+            "oos_aggregate": 1.0,
+            "oos_join": 1.0,
+            "oos_lookup": 1.0,
+            "oos_prior": 1.0,
+            "oos_report": 1.0,
+            "supply_chain": 1.0
+          }
+        },
+        "index": {
+          "accuracy": 0.7043,
+          "query_usd_per_q": 0.000204,
+          "build_usd": 0.0,
+          "usd_per_q_at": {
+            "115": 0.000204,
+            "1000": 0.000204,
+            "10000": 0.000204
+          },
+          "mean_latency_s": 3.51,
+          "p50_latency_s": 3.29,
+          "per_hop": {
+            "aggregate": 0.0833,
+            "cross_year": 1.0,
+            "deep_chain": 1.0,
+            "metric_change": 1.0,
+            "oos_aggregate": 0.0,
+            "oos_join": 0.0,
+            "oos_lookup": 0.7222,
+            "oos_prior": 1.0,
+            "oos_report": 1.0,
+            "supply_chain": 0.0
+          }
+        },
+        "index_join": {
+          "accuracy": 0.7826,
+          "query_usd_per_q": 0.000453,
+          "build_usd": 0.0,
+          "usd_per_q_at": {
+            "115": 0.000453,
+            "1000": 0.000453,
+            "10000": 0.000453
+          },
+          "mean_latency_s": 7.66,
+          "p50_latency_s": 6.69,
+          "per_hop": {
+            "aggregate": 0.3333,
+            "cross_year": 1.0,
+            "deep_chain": 1.0,
+            "metric_change": 1.0,
+            "oos_aggregate": 0.1667,
+            "oos_join": 0.0,
+            "oos_lookup": 0.7222,
+            "oos_prior": 1.0,
+            "oos_report": 1.0,
+            "supply_chain": 0.625
+          }
+        },
+        "view": {
+          "accuracy": 0.5478,
+          "query_usd_per_q": 0.000168,
+          "build_usd": 0.1507,
+          "usd_per_q_at": {
+            "115": 0.001478,
+            "1000": 0.000318,
+            "10000": 0.000183
+          },
+          "mean_latency_s": 2.35,
+          "p50_latency_s": 2.25,
+          "per_hop": {
+            "aggregate": 1.0,
+            "cross_year": 1.0,
+            "deep_chain": 1.0,
+            "metric_change": 1.0,
+            "oos_aggregate": 0.0,
+            "oos_join": 0.0,
+            "oos_lookup": 0.0,
+            "oos_prior": 0.0,
+            "oos_report": 0.0,
+            "supply_chain": 1.0
+          }
+        },
+        "view_sql": {
+          "accuracy": 0.5478,
+          "query_usd_per_q": 0.001168,
+          "build_usd": 0.1507,
+          "usd_per_q_at": {
+            "115": 0.002478,
+            "1000": 0.001318,
+            "10000": 0.001183
+          },
+          "mean_latency_s": 17.55,
+          "p50_latency_s": 9.82,
+          "per_hop": {
+            "aggregate": 1.0,
+            "cross_year": 1.0,
+            "deep_chain": 1.0,
+            "metric_change": 1.0,
+            "oos_aggregate": 0.0,
+            "oos_join": 0.0,
+            "oos_lookup": 0.0,
+            "oos_prior": 0.0,
+            "oos_report": 0.0,
+            "supply_chain": 1.0
+          }
+        },
+        "agent": {
+          "accuracy": 0.9913,
+          "query_usd_per_q": 0.001136,
+          "build_usd": 0.0,
+          "usd_per_q_at": {
+            "115": 0.001136,
+            "1000": 0.001136,
+            "10000": 0.001136
+          },
+          "mean_latency_s": 10.9,
+          "p50_latency_s": 6.43,
+          "per_hop": {
+            "aggregate": 1.0,
+            "cross_year": 1.0,
+            "deep_chain": 1.0,
+            "metric_change": 1.0,
+            "oos_aggregate": 1.0,
+            "oos_join": 1.0,
+            "oos_lookup": 1.0,
+            "oos_prior": 1.0,
+            "oos_report": 0.9444,
+            "supply_chain": 1.0
+          }
+        }
+      },
+      "oracle": {
+        "accuracy": 1.0,
+        "query_usd_per_q": 0.000241,
+        "build_usd": 0.1507,
+        "usd_per_q_at": {
+          "115": 0.001551,
+          "1000": 0.000391,
+          "10000": 0.000256
+        },
+        "mean_latency_s": 3.42,
+        "p50_latency_s": 3.04
+      },
+      "policies": {
+        "scan_or_view@original": {
+          "accuracy": 0.9565,
+          "query_usd_per_q": 0.00069,
+          "build_usd": 0.0,
+          "usd_per_q_at": {
+            "115": 0.00069,
+            "1000": 0.00069,
+            "10000": 0.00069
+          },
+          "mean_latency_s": 9.68,
+          "p50_latency_s": 8.03,
+          "paths_used": {
+            "scan": 31,
+            "index": 84
+          },
+          "per_hop": {
+            "aggregate": 1.0,
+            "cross_year": 1.0,
+            "deep_chain": 1.0,
+            "metric_change": 1.0,
+            "oos_aggregate": 1.0,
+            "oos_join": 1.0,
+            "oos_lookup": 0.7222,
+            "oos_prior": 1.0,
+            "oos_report": 1.0,
+            "supply_chain": 1.0
+          }
+        },
+        "sql_first@original": {
+          "accuracy": 0.8696,
+          "query_usd_per_q": 0.000924,
+          "build_usd": 0.1507,
+          "usd_per_q_at": {
+            "115": 0.002235,
+            "1000": 0.001075,
+            "10000": 0.000939
+          },
+          "mean_latency_s": 14.42,
+          "p50_latency_s": 8.03,
+          "paths_used": {
+            "index": 84,
+            "view_sql": 31
+          },
+          "per_hop": {
+            "aggregate": 1.0,
+            "cross_year": 1.0,
+            "deep_chain": 1.0,
+            "metric_change": 1.0,
+            "oos_aggregate": 0.0,
+            "oos_join": 0.0,
+            "oos_lookup": 0.7222,
+            "oos_prior": 1.0,
+            "oos_report": 1.0,
+            "supply_chain": 1.0
+          }
+        },
+        "sql_escalate@original": {
+          "accuracy": 0.9565,
+          "query_usd_per_q": 0.001001,
+          "build_usd": 0.1507,
+          "usd_per_q_at": {
+            "115": 0.002311,
+            "1000": 0.001151,
+            "10000": 0.001016
+          },
+          "mean_latency_s": 15.06,
+          "p50_latency_s": 8.03,
+          "paths_used": {
+            "scan": 10,
+            "index": 84,
+            "view_sql": 31
+          },
+          "per_hop": {
+            "aggregate": 1.0,
+            "cross_year": 1.0,
+            "deep_chain": 1.0,
+            "metric_change": 1.0,
+            "oos_aggregate": 1.0,
+            "oos_join": 1.0,
+            "oos_lookup": 0.7222,
+            "oos_prior": 1.0,
+            "oos_report": 1.0,
+            "supply_chain": 1.0
+          }
+        },
+        "coverage@original": {
+          "accuracy": 0.9565,
+          "query_usd_per_q": 0.00066,
+          "build_usd": 0.1507,
+          "usd_per_q_at": {
+            "115": 0.001971,
+            "1000": 0.000811,
+            "10000": 0.000675
+          },
+          "mean_latency_s": 10.5,
+          "p50_latency_s": 8.03,
+          "paths_used": {
+            "scan": 10,
+            "index": 84,
+            "view_sql": 21
+          },
+          "per_hop": {
+            "aggregate": 1.0,
+            "cross_year": 1.0,
+            "deep_chain": 1.0,
+            "metric_change": 1.0,
+            "oos_aggregate": 1.0,
+            "oos_join": 1.0,
+            "oos_lookup": 0.7222,
+            "oos_prior": 1.0,
+            "oos_report": 1.0,
+            "supply_chain": 1.0
+          }
+        },
+        "coverage_escalate@original": {
+          "accuracy": 0.9565,
+          "query_usd_per_q": 0.00066,
+          "build_usd": 0.1507,
+          "usd_per_q_at": {
+            "115": 0.001971,
+            "1000": 0.000811,
+            "10000": 0.000675
+          },
+          "mean_latency_s": 10.5,
+          "p50_latency_s": 8.03,
+          "paths_used": {
+            "scan": 10,
+            "index": 84,
+            "view_sql": 21
+          },
+          "per_hop": {
+            "aggregate": 1.0,
+            "cross_year": 1.0,
+            "deep_chain": 1.0,
+            "metric_change": 1.0,
+            "oos_aggregate": 1.0,
+            "oos_join": 1.0,
+            "oos_lookup": 0.7222,
+            "oos_prior": 1.0,
+            "oos_report": 1.0,
+            "supply_chain": 1.0
+          }
+        },
+        "coverage_all@original": {
+          "accuracy": 0.9565,
+          "query_usd_per_q": 0.000752,
+          "build_usd": 0.1507,
+          "usd_per_q_at": {
+            "115": 0.002063,
+            "1000": 0.000903,
+            "10000": 0.000767
+          },
+          "mean_latency_s": 12.33,
+          "p50_latency_s": 11.07,
+          "paths_used": {
+            "scan": 10,
+            "index": 42,
+            "view_sql": 63
+          },
+          "per_hop": {
+            "aggregate": 1.0,
+            "cross_year": 1.0,
+            "deep_chain": 1.0,
+            "metric_change": 1.0,
+            "oos_aggregate": 1.0,
+            "oos_join": 1.0,
+            "oos_lookup": 0.7222,
+            "oos_prior": 1.0,
+            "oos_report": 1.0,
+            "supply_chain": 1.0
+          }
+        },
+        "coverage_lazy@original": {
+          "accuracy": 0.9565,
+          "query_usd_per_q": 0.00066,
+          "build_usd": 0.1507,
+          "usd_per_q_at": {
+            "115": 0.001971,
+            "1000": 0.000811,
+            "10000": 0.000675
+          },
+          "mean_latency_s": 10.5,
+          "p50_latency_s": 8.03,
+          "paths_used": {
+            "scan": 10,
+            "index": 84,
+            "view_sql": 21
+          },
+          "per_hop": {
+            "aggregate": 1.0,
+            "cross_year": 1.0,
+            "deep_chain": 1.0,
+            "metric_change": 1.0,
+            "oos_aggregate": 1.0,
+            "oos_join": 1.0,
+            "oos_lookup": 0.7222,
+            "oos_prior": 1.0,
+            "oos_report": 1.0,
+            "supply_chain": 1.0
+          }
+        },
+        "coverage_lazy_always@original": {
+          "accuracy": 0.9565,
+          "query_usd_per_q": 0.001025,
+          "build_usd": 0.1507,
+          "usd_per_q_at": {
+            "115": 0.002336,
+            "1000": 0.001176,
+            "10000": 0.00104
+          },
+          "mean_latency_s": 16.0,
+          "p50_latency_s": 8.03,
+          "paths_used": {
+            "index": 84,
+            "view_sql": 21,
+            "view_lazy": 10
+          },
+          "per_hop": {
+            "aggregate": 1.0,
+            "cross_year": 1.0,
+            "deep_chain": 1.0,
+            "metric_change": 1.0,
+            "oos_aggregate": 1.0,
+            "oos_join": 1.0,
+            "oos_lookup": 0.7222,
+            "oos_prior": 1.0,
+            "oos_report": 1.0,
+            "supply_chain": 1.0
+          }
+        },
+        "posthoc_uncovered_lookup_agent@original": {
+          "accuracy": 0.9913,
+          "query_usd_per_q": 0.000735,
+          "build_usd": 0.1507,
+          "usd_per_q_at": {
+            "115": 0.002046,
+            "1000": 0.000886,
+            "10000": 0.00075
+          },
+          "mean_latency_s": 11.28,
+          "p50_latency_s": 9.47,
+          "paths_used": {
+            "scan": 10,
+            "index": 42,
+            "view_sql": 21,
+            "agent": 42
+          },
+          "per_hop": {
+            "aggregate": 1.0,
+            "cross_year": 1.0,
+            "deep_chain": 1.0,
+            "metric_change": 1.0,
+            "oos_aggregate": 1.0,
+            "oos_join": 1.0,
+            "oos_lookup": 1.0,
+            "oos_prior": 1.0,
+            "oos_report": 0.9444,
+            "supply_chain": 1.0
+          }
+        },
+        "scan_or_view@paraphrased": {
+          "accuracy": 0.9565,
+          "query_usd_per_q": 0.000774,
+          "build_usd": 0.0,
+          "usd_per_q_at": {
+            "115": 0.000774,
+            "1000": 0.000774,
+            "10000": 0.000774
+          },
+          "mean_latency_s": 10.52,
+          "p50_latency_s": 7.7,
+          "paths_used": {
+            "scan": 33,
+            "index": 82
+          },
+          "per_hop": {
+            "aggregate": 1.0,
+            "cross_year": 1.0,
+            "deep_chain": 1.0,
+            "metric_change": 1.0,
+            "oos_aggregate": 1.0,
+            "oos_join": 1.0,
+            "oos_lookup": 0.7222,
+            "oos_prior": 1.0,
+            "oos_report": 1.0,
+            "supply_chain": 1.0
+          }
+        },
+        "sql_first@paraphrased": {
+          "accuracy": 0.8522,
+          "query_usd_per_q": 0.001019,
+          "build_usd": 0.1507,
+          "usd_per_q_at": {
+            "115": 0.00233,
+            "1000": 0.00117,
+            "10000": 0.001034
+          },
+          "mean_latency_s": 15.52,
+          "p50_latency_s": 7.7,
+          "paths_used": {
+            "index": 82,
+            "view_sql": 33
+          },
+          "per_hop": {
+            "aggregate": 1.0,
+            "cross_year": 1.0,
+            "deep_chain": 1.0,
+            "metric_change": 1.0,
+            "oos_aggregate": 0.0,
+            "oos_join": 0.0,
+            "oos_lookup": 0.7222,
+            "oos_prior": 0.8333,
+            "oos_report": 0.9444,
+            "supply_chain": 1.0
+          }
+        },
+        "sql_escalate@paraphrased": {
+          "accuracy": 0.9565,
+          "query_usd_per_q": 0.001107,
+          "build_usd": 0.1507,
+          "usd_per_q_at": {
+            "115": 0.002418,
+            "1000": 0.001258,
+            "10000": 0.001122
+          },
+          "mean_latency_s": 16.24,
+          "p50_latency_s": 7.7,
+          "paths_used": {
+            "scan": 12,
+            "index": 82,
+            "view_sql": 33
+          },
+          "per_hop": {
+            "aggregate": 1.0,
+            "cross_year": 1.0,
+            "deep_chain": 1.0,
+            "metric_change": 1.0,
+            "oos_aggregate": 1.0,
+            "oos_join": 1.0,
+            "oos_lookup": 0.7222,
+            "oos_prior": 1.0,
+            "oos_report": 1.0,
+            "supply_chain": 1.0
+          }
+        },
+        "coverage@paraphrased": {
+          "accuracy": 0.9565,
+          "query_usd_per_q": 0.000743,
+          "build_usd": 0.1507,
+          "usd_per_q_at": {
+            "115": 0.002054,
+            "1000": 0.000894,
+            "10000": 0.000758
+          },
+          "mean_latency_s": 11.35,
+          "p50_latency_s": 7.7,
+          "paths_used": {
+            "scan": 12,
+            "index": 82,
+            "view_sql": 21
+          },
+          "per_hop": {
+            "aggregate": 1.0,
+            "cross_year": 1.0,
+            "deep_chain": 1.0,
+            "metric_change": 1.0,
+            "oos_aggregate": 1.0,
+            "oos_join": 1.0,
+            "oos_lookup": 0.7222,
+            "oos_prior": 1.0,
+            "oos_report": 1.0,
+            "supply_chain": 1.0
+          }
+        },
+        "coverage_escalate@paraphrased": {
+          "accuracy": 0.9565,
+          "query_usd_per_q": 0.000743,
+          "build_usd": 0.1507,
+          "usd_per_q_at": {
+            "115": 0.002054,
+            "1000": 0.000894,
+            "10000": 0.000758
+          },
+          "mean_latency_s": 11.35,
+          "p50_latency_s": 7.7,
+          "paths_used": {
+            "scan": 12,
+            "index": 82,
+            "view_sql": 21
+          },
+          "per_hop": {
+            "aggregate": 1.0,
+            "cross_year": 1.0,
+            "deep_chain": 1.0,
+            "metric_change": 1.0,
+            "oos_aggregate": 1.0,
+            "oos_join": 1.0,
+            "oos_lookup": 0.7222,
+            "oos_prior": 1.0,
+            "oos_report": 1.0,
+            "supply_chain": 1.0
+          }
+        },
+        "coverage_all@paraphrased": {
+          "accuracy": 0.9565,
+          "query_usd_per_q": 0.000835,
+          "build_usd": 0.1507,
+          "usd_per_q_at": {
+            "115": 0.002146,
+            "1000": 0.000986,
+            "10000": 0.00085
+          },
+          "mean_latency_s": 13.18,
+          "p50_latency_s": 11.02,
+          "paths_used": {
+            "scan": 12,
+            "index": 40,
+            "view_sql": 63
+          },
+          "per_hop": {
+            "aggregate": 1.0,
+            "cross_year": 1.0,
+            "deep_chain": 1.0,
+            "metric_change": 1.0,
+            "oos_aggregate": 1.0,
+            "oos_join": 1.0,
+            "oos_lookup": 0.7222,
+            "oos_prior": 1.0,
+            "oos_report": 1.0,
+            "supply_chain": 1.0
+          }
+        },
+        "coverage_lazy@paraphrased": {
+          "accuracy": 0.9565,
+          "query_usd_per_q": 0.000743,
+          "build_usd": 0.1507,
+          "usd_per_q_at": {
+            "115": 0.002054,
+            "1000": 0.000894,
+            "10000": 0.000758
+          },
+          "mean_latency_s": 11.35,
+          "p50_latency_s": 7.7,
+          "paths_used": {
+            "scan": 12,
+            "index": 82,
+            "view_sql": 21
+          },
+          "per_hop": {
+            "aggregate": 1.0,
+            "cross_year": 1.0,
+            "deep_chain": 1.0,
+            "metric_change": 1.0,
+            "oos_aggregate": 1.0,
+            "oos_join": 1.0,
+            "oos_lookup": 0.7222,
+            "oos_prior": 1.0,
+            "oos_report": 1.0,
+            "supply_chain": 1.0
+          }
+        },
+        "coverage_lazy_always@paraphrased": {
+          "accuracy": 0.9565,
+          "query_usd_per_q": 0.001108,
+          "build_usd": 0.1507,
+          "usd_per_q_at": {
+            "115": 0.002419,
+            "1000": 0.001259,
+            "10000": 0.001123
+          },
+          "mean_latency_s": 16.84,
+          "p50_latency_s": 7.7,
+          "paths_used": {
+            "scan": 2,
+            "index": 82,
+            "view_sql": 21,
+            "view_lazy": 10
+          },
+          "per_hop": {
+            "aggregate": 1.0,
+            "cross_year": 1.0,
+            "deep_chain": 1.0,
+            "metric_change": 1.0,
+            "oos_aggregate": 1.0,
+            "oos_join": 1.0,
+            "oos_lookup": 0.7222,
+            "oos_prior": 1.0,
+            "oos_report": 1.0,
+            "supply_chain": 1.0
+          }
+        },
+        "posthoc_uncovered_lookup_agent@paraphrased": {
+          "accuracy": 1.0,
+          "query_usd_per_q": 0.000813,
+          "build_usd": 0.1507,
+          "usd_per_q_at": {
+            "115": 0.002124,
+            "1000": 0.000964,
+            "10000": 0.000828
+          },
+          "mean_latency_s": 12.07,
+          "p50_latency_s": 9.42,
+          "paths_used": {
+            "scan": 12,
+            "index": 42,
+            "view_sql": 21,
+            "agent": 40
+          },
+          "per_hop": {
+            "aggregate": 1.0,
+            "cross_year": 1.0,
+            "deep_chain": 1.0,
+            "metric_change": 1.0,
+            "oos_aggregate": 1.0,
+            "oos_join": 1.0,
+            "oos_lookup": 1.0,
+            "oos_prior": 1.0,
+            "oos_report": 1.0,
+            "supply_chain": 1.0
+          }
+        },
+        "scan_or_view@gold": {
+          "accuracy": 0.9565,
+          "query_usd_per_q": 0.000367,
+          "build_usd": 0.0,
+          "usd_per_q_at": {
+            "115": 0.000367,
+            "1000": 0.000367,
+            "10000": 0.000367
+          },
+          "mean_latency_s": 4.29,
+          "p50_latency_s": 3.46,
+          "paths_used": {
+            "scan": 31,
+            "index": 84
+          },
+          "per_hop": {
+            "aggregate": 1.0,
+            "cross_year": 1.0,
+            "deep_chain": 1.0,
+            "metric_change": 1.0,
+            "oos_aggregate": 1.0,
+            "oos_join": 1.0,
+            "oos_lookup": 0.7222,
+            "oos_prior": 1.0,
+            "oos_report": 1.0,
+            "supply_chain": 1.0
+          }
+        },
+        "sql_first@gold": {
+          "accuracy": 0.8696,
+          "query_usd_per_q": 0.0006,
+          "build_usd": 0.1507,
+          "usd_per_q_at": {
+            "115": 0.001911,
+            "1000": 0.000751,
+            "10000": 0.000615
+          },
+          "mean_latency_s": 9.03,
+          "p50_latency_s": 3.46,
+          "paths_used": {
+            "index": 84,
+            "view_sql": 31
+          },
+          "per_hop": {
+            "aggregate": 1.0,
+            "cross_year": 1.0,
+            "deep_chain": 1.0,
+            "metric_change": 1.0,
+            "oos_aggregate": 0.0,
+            "oos_join": 0.0,
+            "oos_lookup": 0.7222,
+            "oos_prior": 1.0,
+            "oos_report": 1.0,
+            "supply_chain": 1.0
+          }
+        },
+        "sql_escalate@gold": {
+          "accuracy": 0.9565,
+          "query_usd_per_q": 0.000677,
+          "build_usd": 0.1507,
+          "usd_per_q_at": {
+            "115": 0.001988,
+            "1000": 0.000828,
+            "10000": 0.000692
+          },
+          "mean_latency_s": 9.67,
+          "p50_latency_s": 3.46,
+          "paths_used": {
+            "scan": 10,
+            "index": 84,
+            "view_sql": 31
+          },
+          "per_hop": {
+            "aggregate": 1.0,
+            "cross_year": 1.0,
+            "deep_chain": 1.0,
+            "metric_change": 1.0,
+            "oos_aggregate": 1.0,
+            "oos_join": 1.0,
+            "oos_lookup": 0.7222,
+            "oos_prior": 1.0,
+            "oos_report": 1.0,
+            "supply_chain": 1.0
+          }
+        },
+        "coverage@gold": {
+          "accuracy": 0.9565,
+          "query_usd_per_q": 0.000336,
+          "build_usd": 0.1507,
+          "usd_per_q_at": {
+            "115": 0.001647,
+            "1000": 0.000487,
+            "10000": 0.000352
+          },
+          "mean_latency_s": 5.11,
+          "p50_latency_s": 3.46,
+          "paths_used": {
+            "scan": 10,
+            "index": 84,
+            "view_sql": 21
+          },
+          "per_hop": {
+            "aggregate": 1.0,
+            "cross_year": 1.0,
+            "deep_chain": 1.0,
+            "metric_change": 1.0,
+            "oos_aggregate": 1.0,
+            "oos_join": 1.0,
+            "oos_lookup": 0.7222,
+            "oos_prior": 1.0,
+            "oos_report": 1.0,
+            "supply_chain": 1.0
+          }
+        },
+        "coverage_escalate@gold": {
+          "accuracy": 0.9565,
+          "query_usd_per_q": 0.000336,
+          "build_usd": 0.1507,
+          "usd_per_q_at": {
+            "115": 0.001647,
+            "1000": 0.000487,
+            "10000": 0.000352
+          },
+          "mean_latency_s": 5.11,
+          "p50_latency_s": 3.46,
+          "paths_used": {
+            "scan": 10,
+            "index": 84,
+            "view_sql": 21
+          },
+          "per_hop": {
+            "aggregate": 1.0,
+            "cross_year": 1.0,
+            "deep_chain": 1.0,
+            "metric_change": 1.0,
+            "oos_aggregate": 1.0,
+            "oos_join": 1.0,
+            "oos_lookup": 0.7222,
+            "oos_prior": 1.0,
+            "oos_report": 1.0,
+            "supply_chain": 1.0
+          }
+        },
+        "coverage_all@gold": {
+          "accuracy": 0.9565,
+          "query_usd_per_q": 0.000428,
+          "build_usd": 0.1507,
+          "usd_per_q_at": {
+            "115": 0.001739,
+            "1000": 0.000579,
+            "10000": 0.000443
+          },
+          "mean_latency_s": 6.94,
+          "p50_latency_s": 6.75,
+          "paths_used": {
+            "scan": 10,
+            "index": 42,
+            "view_sql": 63
+          },
+          "per_hop": {
+            "aggregate": 1.0,
+            "cross_year": 1.0,
+            "deep_chain": 1.0,
+            "metric_change": 1.0,
+            "oos_aggregate": 1.0,
+            "oos_join": 1.0,
+            "oos_lookup": 0.7222,
+            "oos_prior": 1.0,
+            "oos_report": 1.0,
+            "supply_chain": 1.0
+          }
+        },
+        "coverage_lazy@gold": {
+          "accuracy": 0.9565,
+          "query_usd_per_q": 0.000336,
+          "build_usd": 0.1507,
+          "usd_per_q_at": {
+            "115": 0.001647,
+            "1000": 0.000487,
+            "10000": 0.000352
+          },
+          "mean_latency_s": 5.11,
+          "p50_latency_s": 3.46,
+          "paths_used": {
+            "scan": 10,
+            "index": 84,
+            "view_sql": 21
+          },
+          "per_hop": {
+            "aggregate": 1.0,
+            "cross_year": 1.0,
+            "deep_chain": 1.0,
+            "metric_change": 1.0,
+            "oos_aggregate": 1.0,
+            "oos_join": 1.0,
+            "oos_lookup": 0.7222,
+            "oos_prior": 1.0,
+            "oos_report": 1.0,
+            "supply_chain": 1.0
+          }
+        },
+        "coverage_lazy_always@gold": {
+          "accuracy": 0.9565,
+          "query_usd_per_q": 0.000702,
+          "build_usd": 0.1507,
+          "usd_per_q_at": {
+            "115": 0.002012,
+            "1000": 0.000852,
+            "10000": 0.000717
+          },
+          "mean_latency_s": 10.61,
+          "p50_latency_s": 3.46,
+          "paths_used": {
+            "index": 84,
+            "view_sql": 21,
+            "view_lazy": 10
+          },
+          "per_hop": {
+            "aggregate": 1.0,
+            "cross_year": 1.0,
+            "deep_chain": 1.0,
+            "metric_change": 1.0,
+            "oos_aggregate": 1.0,
+            "oos_join": 1.0,
+            "oos_lookup": 0.7222,
+            "oos_prior": 1.0,
+            "oos_report": 1.0,
+            "supply_chain": 1.0
+          }
+        },
+        "posthoc_uncovered_lookup_agent@gold": {
+          "accuracy": 0.9913,
+          "query_usd_per_q": 0.000411,
+          "build_usd": 0.1507,
+          "usd_per_q_at": {
+            "115": 0.001722,
+            "1000": 0.000562,
+            "10000": 0.000426
+          },
+          "mean_latency_s": 5.89,
+          "p50_latency_s": 4.98,
+          "paths_used": {
+            "scan": 10,
+            "index": 42,
+            "view_sql": 21,
+            "agent": 42
+          },
+          "per_hop": {
+            "aggregate": 1.0,
+            "cross_year": 1.0,
+            "deep_chain": 1.0,
+            "metric_change": 1.0,
+            "oos_aggregate": 1.0,
+            "oos_join": 1.0,
+            "oos_lookup": 1.0,
+            "oos_prior": 1.0,
+            "oos_report": 0.9444,
+            "supply_chain": 1.0
+          }
+        }
+      }
+    },
+    "180": {
+      "companies": 186,
+      "chars": 1027710,
+      "n_questions": 115,
+      "scan_fits": true,
+      "view_build_usd": 0.4601,
+      "single": {
+        "scan": {
+          "accuracy": 0.9739,
+          "query_usd_per_q": 0.002645,
+          "build_usd": 0.0,
+          "usd_per_q_at": {
+            "115": 0.002645,
+            "1000": 0.002645,
+            "10000": 0.002645
+          },
+          "mean_latency_s": 8.28,
+          "p50_latency_s": 7.0,
+          "per_hop": {
+            "aggregate": 0.75,
+            "cross_year": 1.0,
+            "deep_chain": 1.0,
+            "metric_change": 1.0,
+            "oos_aggregate": 1.0,
+            "oos_join": 1.0,
+            "oos_lookup": 1.0,
+            "oos_prior": 1.0,
+            "oos_report": 1.0,
+            "supply_chain": 1.0
+          }
+        },
+        "index": {
+          "accuracy": 0.6957,
+          "query_usd_per_q": 0.000196,
+          "build_usd": 0.0,
+          "usd_per_q_at": {
+            "115": 0.000196,
+            "1000": 0.000196,
+            "10000": 0.000196
+          },
+          "mean_latency_s": 3.24,
+          "p50_latency_s": 3.19,
+          "per_hop": {
+            "aggregate": 0.0,
+            "cross_year": 1.0,
+            "deep_chain": 0.0,
+            "metric_change": 1.0,
+            "oos_aggregate": 0.0,
+            "oos_join": 0.0,
+            "oos_lookup": 0.7778,
+            "oos_prior": 1.0,
+            "oos_report": 1.0,
+            "supply_chain": 0.0
+          }
+        },
+        "index_join": {
+          "accuracy": 0.7478,
+          "query_usd_per_q": 0.000438,
+          "build_usd": 0.0,
+          "usd_per_q_at": {
+            "115": 0.000438,
+            "1000": 0.000438,
+            "10000": 0.000438
+          },
+          "mean_latency_s": 7.19,
+          "p50_latency_s": 6.25,
+          "per_hop": {
+            "aggregate": 0.0,
+            "cross_year": 1.0,
+            "deep_chain": 1.0,
+            "metric_change": 1.0,
+            "oos_aggregate": 0.0,
+            "oos_join": 0.0,
+            "oos_lookup": 0.7778,
+            "oos_prior": 1.0,
+            "oos_report": 1.0,
+            "supply_chain": 0.625
+          }
+        },
+        "view": {
+          "accuracy": 0.5391,
+          "query_usd_per_q": 0.000284,
+          "build_usd": 0.4601,
+          "usd_per_q_at": {
+            "115": 0.004284,
+            "1000": 0.000744,
+            "10000": 0.00033
+          },
+          "mean_latency_s": 3.14,
+          "p50_latency_s": 2.49,
+          "per_hop": {
+            "aggregate": 0.9167,
+            "cross_year": 1.0,
+            "deep_chain": 1.0,
+            "metric_change": 1.0,
+            "oos_aggregate": 0.0,
+            "oos_join": 0.0,
+            "oos_lookup": 0.0,
+            "oos_prior": 0.0,
+            "oos_report": 0.0,
+            "supply_chain": 1.0
+          }
+        },
+        "view_sql": {
+          "accuracy": 0.5478,
+          "query_usd_per_q": 0.001327,
+          "build_usd": 0.4601,
+          "usd_per_q_at": {
+            "115": 0.005327,
+            "1000": 0.001787,
+            "10000": 0.001373
+          },
+          "mean_latency_s": 19.48,
+          "p50_latency_s": 10.28,
+          "per_hop": {
+            "aggregate": 1.0,
+            "cross_year": 1.0,
+            "deep_chain": 1.0,
+            "metric_change": 1.0,
+            "oos_aggregate": 0.0,
+            "oos_join": 0.0,
+            "oos_lookup": 0.0,
+            "oos_prior": 0.0,
+            "oos_report": 0.0,
+            "supply_chain": 1.0
+          }
+        },
+        "agent": {
+          "accuracy": 0.9043,
+          "query_usd_per_q": 0.001335,
+          "build_usd": 0.0,
+          "usd_per_q_at": {
+            "115": 0.001335,
+            "1000": 0.001335,
+            "10000": 0.001335
+          },
+          "mean_latency_s": 11.45,
+          "p50_latency_s": 6.46,
+          "per_hop": {
+            "aggregate": 0.3333,
+            "cross_year": 1.0,
+            "deep_chain": 1.0,
+            "metric_change": 1.0,
+            "oos_aggregate": 0.5,
+            "oos_join": 1.0,
+            "oos_lookup": 1.0,
+            "oos_prior": 1.0,
+            "oos_report": 1.0,
+            "supply_chain": 1.0
+          }
+        }
+      },
+      "oracle": {
+        "accuracy": 1.0,
+        "query_usd_per_q": 0.000341,
+        "build_usd": 0.4601,
+        "usd_per_q_at": {
+          "115": 0.004341,
+          "1000": 0.000801,
+          "10000": 0.000387
+        },
+        "mean_latency_s": 4.13,
+        "p50_latency_s": 3.17
+      },
+      "policies": {
+        "scan_or_view@original": {
+          "accuracy": 0.9391,
+          "query_usd_per_q": 0.001111,
+          "build_usd": 0.0,
+          "usd_per_q_at": {
+            "115": 0.001111,
+            "1000": 0.001111,
+            "10000": 0.001111
+          },
+          "mean_latency_s": 11.02,
+          "p50_latency_s": 7.93,
+          "paths_used": {
+            "scan": 31,
+            "index": 84
+          },
+          "per_hop": {
+            "aggregate": 0.75,
+            "cross_year": 1.0,
+            "deep_chain": 1.0,
+            "metric_change": 1.0,
+            "oos_aggregate": 1.0,
+            "oos_join": 1.0,
+            "oos_lookup": 0.7778,
+            "oos_prior": 1.0,
+            "oos_report": 1.0,
+            "supply_chain": 1.0
+          }
+        },
+        "sql_first@original": {
+          "accuracy": 0.8783,
+          "query_usd_per_q": 0.000968,
+          "build_usd": 0.4601,
+          "usd_per_q_at": {
+            "115": 0.004968,
+            "1000": 0.001428,
+            "10000": 0.001014
+          },
+          "mean_latency_s": 14.91,
+          "p50_latency_s": 7.93,
+          "paths_used": {
+            "index": 84,
+            "view_sql": 31
+          },
+          "per_hop": {
+            "aggregate": 1.0,
+            "cross_year": 1.0,
+            "deep_chain": 1.0,
+            "metric_change": 1.0,
+            "oos_aggregate": 0.0,
+            "oos_join": 0.0,
+            "oos_lookup": 0.7778,
+            "oos_prior": 1.0,
+            "oos_report": 1.0,
+            "supply_chain": 1.0
+          }
+        },
+        "sql_escalate@original": {
+          "accuracy": 0.9652,
+          "query_usd_per_q": 0.001156,
+          "build_usd": 0.4601,
+          "usd_per_q_at": {
+            "115": 0.005157,
+            "1000": 0.001616,
+            "10000": 0.001202
+          },
+          "mean_latency_s": 15.86,
+          "p50_latency_s": 7.93,
+          "paths_used": {
+            "scan": 10,
+            "index": 84,
+            "view_sql": 31
+          },
+          "per_hop": {
+            "aggregate": 1.0,
+            "cross_year": 1.0,
+            "deep_chain": 1.0,
+            "metric_change": 1.0,
+            "oos_aggregate": 1.0,
+            "oos_join": 1.0,
+            "oos_lookup": 0.7778,
+            "oos_prior": 1.0,
+            "oos_report": 1.0,
+            "supply_chain": 1.0
+          }
+        },
+        "coverage@original": {
+          "accuracy": 0.9652,
+          "query_usd_per_q": 0.000789,
+          "build_usd": 0.4601,
+          "usd_per_q_at": {
+            "115": 0.004789,
+            "1000": 0.001249,
+            "10000": 0.000835
+          },
+          "mean_latency_s": 10.91,
+          "p50_latency_s": 7.93,
+          "paths_used": {
+            "scan": 10,
+            "index": 84,
+            "view_sql": 21
+          },
+          "per_hop": {
+            "aggregate": 1.0,
+            "cross_year": 1.0,
+            "deep_chain": 1.0,
+            "metric_change": 1.0,
+            "oos_aggregate": 1.0,
+            "oos_join": 1.0,
+            "oos_lookup": 0.7778,
+            "oos_prior": 1.0,
+            "oos_report": 1.0,
+            "supply_chain": 1.0
+          }
+        },
+        "coverage_escalate@original": {
+          "accuracy": 0.9652,
+          "query_usd_per_q": 0.000789,
+          "build_usd": 0.4601,
+          "usd_per_q_at": {
+            "115": 0.004789,
+            "1000": 0.001249,
+            "10000": 0.000835
+          },
+          "mean_latency_s": 10.91,
+          "p50_latency_s": 7.93,
+          "paths_used": {
+            "scan": 10,
+            "index": 84,
+            "view_sql": 21
+          },
+          "per_hop": {
+            "aggregate": 1.0,
+            "cross_year": 1.0,
+            "deep_chain": 1.0,
+            "metric_change": 1.0,
+            "oos_aggregate": 1.0,
+            "oos_join": 1.0,
+            "oos_lookup": 0.7778,
+            "oos_prior": 1.0,
+            "oos_report": 1.0,
+            "supply_chain": 1.0
+          }
+        },
+        "coverage_all@original": {
+          "accuracy": 0.9652,
+          "query_usd_per_q": 0.000879,
+          "build_usd": 0.4601,
+          "usd_per_q_at": {
+            "115": 0.00488,
+            "1000": 0.001339,
+            "10000": 0.000925
+          },
+          "mean_latency_s": 12.6,
+          "p50_latency_s": 10.67,
+          "paths_used": {
+            "scan": 10,
+            "index": 42,
+            "view_sql": 63
+          },
+          "per_hop": {
+            "aggregate": 1.0,
+            "cross_year": 1.0,
+            "deep_chain": 1.0,
+            "metric_change": 1.0,
+            "oos_aggregate": 1.0,
+            "oos_join": 1.0,
+            "oos_lookup": 0.7778,
+            "oos_prior": 1.0,
+            "oos_report": 1.0,
+            "supply_chain": 1.0
+          }
+        },
+        "coverage_lazy@original": {
+          "accuracy": 0.9652,
+          "query_usd_per_q": 0.000789,
+          "build_usd": 0.4601,
+          "usd_per_q_at": {
+            "115": 0.004789,
+            "1000": 0.001249,
+            "10000": 0.000835
+          },
+          "mean_latency_s": 10.91,
+          "p50_latency_s": 7.93,
+          "paths_used": {
+            "scan": 10,
+            "index": 84,
+            "view_sql": 21
+          },
+          "per_hop": {
+            "aggregate": 1.0,
+            "cross_year": 1.0,
+            "deep_chain": 1.0,
+            "metric_change": 1.0,
+            "oos_aggregate": 1.0,
+            "oos_join": 1.0,
+            "oos_lookup": 0.7778,
+            "oos_prior": 1.0,
+            "oos_report": 1.0,
+            "supply_chain": 1.0
+          }
+        },
+        "coverage_lazy_always@original": {
+          "accuracy": 0.9652,
+          "query_usd_per_q": 0.001283,
+          "build_usd": 0.4601,
+          "usd_per_q_at": {
+            "115": 0.005283,
+            "1000": 0.001743,
+            "10000": 0.001329
+          },
+          "mean_latency_s": 20.82,
+          "p50_latency_s": 7.93,
+          "paths_used": {
+            "index": 84,
+            "view_sql": 21,
+            "view_lazy": 10
+          },
+          "per_hop": {
+            "aggregate": 1.0,
+            "cross_year": 1.0,
+            "deep_chain": 1.0,
+            "metric_change": 1.0,
+            "oos_aggregate": 1.0,
+            "oos_join": 1.0,
+            "oos_lookup": 0.7778,
+            "oos_prior": 1.0,
+            "oos_report": 1.0,
+            "supply_chain": 1.0
+          }
+        },
+        "posthoc_uncovered_lookup_agent@original": {
+          "accuracy": 1.0,
+          "query_usd_per_q": 0.000868,
+          "build_usd": 0.4601,
+          "usd_per_q_at": {
+            "115": 0.004868,
+            "1000": 0.001328,
+            "10000": 0.000914
+          },
+          "mean_latency_s": 11.72,
+          "p50_latency_s": 9.42,
+          "paths_used": {
+            "scan": 10,
+            "index": 42,
+            "view_sql": 21,
+            "agent": 42
+          },
+          "per_hop": {
+            "aggregate": 1.0,
+            "cross_year": 1.0,
+            "deep_chain": 1.0,
+            "metric_change": 1.0,
+            "oos_aggregate": 1.0,
+            "oos_join": 1.0,
+            "oos_lookup": 1.0,
+            "oos_prior": 1.0,
+            "oos_report": 1.0,
+            "supply_chain": 1.0
+          }
+        },
+        "scan_or_view@paraphrased": {
+          "accuracy": 0.9391,
+          "query_usd_per_q": 0.001197,
+          "build_usd": 0.0,
+          "usd_per_q_at": {
+            "115": 0.001197,
+            "1000": 0.001197,
+            "10000": 0.001197
+          },
+          "mean_latency_s": 11.68,
+          "p50_latency_s": 7.46,
+          "paths_used": {
+            "scan": 33,
+            "index": 82
+          },
+          "per_hop": {
+            "aggregate": 0.75,
+            "cross_year": 1.0,
+            "deep_chain": 1.0,
+            "metric_change": 1.0,
+            "oos_aggregate": 1.0,
+            "oos_join": 1.0,
+            "oos_lookup": 0.7778,
+            "oos_prior": 1.0,
+            "oos_report": 1.0,
+            "supply_chain": 1.0
+          }
+        },
+        "sql_first@paraphrased": {
+          "accuracy": 0.8609,
+          "query_usd_per_q": 0.001062,
+          "build_usd": 0.4601,
+          "usd_per_q_at": {
+            "115": 0.005062,
+            "1000": 0.001522,
+            "10000": 0.001108
+          },
+          "mean_latency_s": 15.99,
+          "p50_latency_s": 7.46,
+          "paths_used": {
+            "index": 82,
+            "view_sql": 33
+          },
+          "per_hop": {
+            "aggregate": 1.0,
+            "cross_year": 1.0,
+            "deep_chain": 1.0,
+            "metric_change": 1.0,
+            "oos_aggregate": 0.0,
+            "oos_join": 0.0,
+            "oos_lookup": 0.7778,
+            "oos_prior": 0.8333,
+            "oos_report": 0.9444,
+            "supply_chain": 1.0
+          }
+        },
+        "sql_escalate@paraphrased": {
+          "accuracy": 0.9652,
+          "query_usd_per_q": 0.001281,
+          "build_usd": 0.4601,
+          "usd_per_q_at": {
+            "115": 0.005282,
+            "1000": 0.001741,
+            "10000": 0.001327
+          },
+          "mean_latency_s": 17.05,
+          "p50_latency_s": 7.46,
+          "paths_used": {
+            "scan": 12,
+            "index": 82,
+            "view_sql": 33
+          },
+          "per_hop": {
+            "aggregate": 1.0,
+            "cross_year": 1.0,
+            "deep_chain": 1.0,
+            "metric_change": 1.0,
+            "oos_aggregate": 1.0,
+            "oos_join": 1.0,
+            "oos_lookup": 0.7778,
+            "oos_prior": 1.0,
+            "oos_report": 1.0,
+            "supply_chain": 1.0
+          }
+        },
+        "coverage@paraphrased": {
+          "accuracy": 0.9652,
+          "query_usd_per_q": 0.000875,
+          "build_usd": 0.4601,
+          "usd_per_q_at": {
+            "115": 0.004876,
+            "1000": 0.001335,
+            "10000": 0.000921
+          },
+          "mean_latency_s": 11.57,
+          "p50_latency_s": 7.46,
+          "paths_used": {
+            "scan": 12,
+            "index": 82,
+            "view_sql": 21
+          },
+          "per_hop": {
+            "aggregate": 1.0,
+            "cross_year": 1.0,
+            "deep_chain": 1.0,
+            "metric_change": 1.0,
+            "oos_aggregate": 1.0,
+            "oos_join": 1.0,
+            "oos_lookup": 0.7778,
+            "oos_prior": 1.0,
+            "oos_report": 1.0,
+            "supply_chain": 1.0
+          }
+        },
+        "coverage_escalate@paraphrased": {
+          "accuracy": 0.9652,
+          "query_usd_per_q": 0.000875,
+          "build_usd": 0.4601,
+          "usd_per_q_at": {
+            "115": 0.004876,
+            "1000": 0.001335,
+            "10000": 0.000921
+          },
+          "mean_latency_s": 11.57,
+          "p50_latency_s": 7.46,
+          "paths_used": {
+            "scan": 12,
+            "index": 82,
+            "view_sql": 21
+          },
+          "per_hop": {
+            "aggregate": 1.0,
+            "cross_year": 1.0,
+            "deep_chain": 1.0,
+            "metric_change": 1.0,
+            "oos_aggregate": 1.0,
+            "oos_join": 1.0,
+            "oos_lookup": 0.7778,
+            "oos_prior": 1.0,
+            "oos_report": 1.0,
+            "supply_chain": 1.0
+          }
+        },
+        "coverage_all@paraphrased": {
+          "accuracy": 0.9652,
+          "query_usd_per_q": 0.000966,
+          "build_usd": 0.4601,
+          "usd_per_q_at": {
+            "115": 0.004966,
+            "1000": 0.001426,
+            "10000": 0.001012
+          },
+          "mean_latency_s": 13.26,
+          "p50_latency_s": 11.01,
+          "paths_used": {
+            "scan": 12,
+            "index": 40,
+            "view_sql": 63
+          },
+          "per_hop": {
+            "aggregate": 1.0,
+            "cross_year": 1.0,
+            "deep_chain": 1.0,
+            "metric_change": 1.0,
+            "oos_aggregate": 1.0,
+            "oos_join": 1.0,
+            "oos_lookup": 0.7778,
+            "oos_prior": 1.0,
+            "oos_report": 1.0,
+            "supply_chain": 1.0
+          }
+        },
+        "coverage_lazy@paraphrased": {
+          "accuracy": 0.9652,
+          "query_usd_per_q": 0.000875,
+          "build_usd": 0.4601,
+          "usd_per_q_at": {
+            "115": 0.004876,
+            "1000": 0.001335,
+            "10000": 0.000921
+          },
+          "mean_latency_s": 11.57,
+          "p50_latency_s": 7.46,
+          "paths_used": {
+            "scan": 12,
+            "index": 82,
+            "view_sql": 21
+          },
+          "per_hop": {
+            "aggregate": 1.0,
+            "cross_year": 1.0,
+            "deep_chain": 1.0,
+            "metric_change": 1.0,
+            "oos_aggregate": 1.0,
+            "oos_join": 1.0,
+            "oos_lookup": 0.7778,
+            "oos_prior": 1.0,
+            "oos_report": 1.0,
+            "supply_chain": 1.0
+          }
+        },
+        "coverage_lazy_always@paraphrased": {
+          "accuracy": 0.9652,
+          "query_usd_per_q": 0.001369,
+          "build_usd": 0.4601,
+          "usd_per_q_at": {
+            "115": 0.00537,
+            "1000": 0.001829,
+            "10000": 0.001415
+          },
+          "mean_latency_s": 21.48,
+          "p50_latency_s": 7.46,
+          "paths_used": {
+            "scan": 2,
+            "index": 82,
+            "view_sql": 21,
+            "view_lazy": 10
+          },
+          "per_hop": {
+            "aggregate": 1.0,
+            "cross_year": 1.0,
+            "deep_chain": 1.0,
+            "metric_change": 1.0,
+            "oos_aggregate": 1.0,
+            "oos_join": 1.0,
+            "oos_lookup": 0.7778,
+            "oos_prior": 1.0,
+            "oos_report": 1.0,
+            "supply_chain": 1.0
+          }
+        },
+        "posthoc_uncovered_lookup_agent@paraphrased": {
+          "accuracy": 1.0,
+          "query_usd_per_q": 0.000951,
+          "build_usd": 0.4601,
+          "usd_per_q_at": {
+            "115": 0.004951,
+            "1000": 0.001411,
+            "10000": 0.000997
+          },
+          "mean_latency_s": 12.34,
+          "p50_latency_s": 9.57,
+          "paths_used": {
+            "scan": 12,
+            "index": 42,
+            "view_sql": 21,
+            "agent": 40
+          },
+          "per_hop": {
+            "aggregate": 1.0,
+            "cross_year": 1.0,
+            "deep_chain": 1.0,
+            "metric_change": 1.0,
+            "oos_aggregate": 1.0,
+            "oos_join": 1.0,
+            "oos_lookup": 1.0,
+            "oos_prior": 1.0,
+            "oos_report": 1.0,
+            "supply_chain": 1.0
+          }
+        },
+        "scan_or_view@gold": {
+          "accuracy": 0.9391,
+          "query_usd_per_q": 0.000768,
+          "build_usd": 0.0,
+          "usd_per_q_at": {
+            "115": 0.000768,
+            "1000": 0.000768,
+            "10000": 0.000768
+          },
+          "mean_latency_s": 5.35,
+          "p50_latency_s": 3.26,
+          "paths_used": {
+            "scan": 31,
+            "index": 84
+          },
+          "per_hop": {
+            "aggregate": 0.75,
+            "cross_year": 1.0,
+            "deep_chain": 1.0,
+            "metric_change": 1.0,
+            "oos_aggregate": 1.0,
+            "oos_join": 1.0,
+            "oos_lookup": 0.7778,
+            "oos_prior": 1.0,
+            "oos_report": 1.0,
+            "supply_chain": 1.0
+          }
+        },
+        "sql_first@gold": {
+          "accuracy": 0.8783,
+          "query_usd_per_q": 0.000625,
+          "build_usd": 0.4601,
+          "usd_per_q_at": {
+            "115": 0.004625,
+            "1000": 0.001085,
+            "10000": 0.000671
+          },
+          "mean_latency_s": 9.24,
+          "p50_latency_s": 3.26,
+          "paths_used": {
+            "index": 84,
+            "view_sql": 31
+          },
+          "per_hop": {
+            "aggregate": 1.0,
+            "cross_year": 1.0,
+            "deep_chain": 1.0,
+            "metric_change": 1.0,
+            "oos_aggregate": 0.0,
+            "oos_join": 0.0,
+            "oos_lookup": 0.7778,
+            "oos_prior": 1.0,
+            "oos_report": 1.0,
+            "supply_chain": 1.0
+          }
+        },
+        "sql_escalate@gold": {
+          "accuracy": 0.9652,
+          "query_usd_per_q": 0.000813,
+          "build_usd": 0.4601,
+          "usd_per_q_at": {
+            "115": 0.004814,
+            "1000": 0.001273,
+            "10000": 0.000859
+          },
+          "mean_latency_s": 10.19,
+          "p50_latency_s": 3.26,
+          "paths_used": {
+            "scan": 10,
+            "index": 84,
+            "view_sql": 31
+          },
+          "per_hop": {
+            "aggregate": 1.0,
+            "cross_year": 1.0,
+            "deep_chain": 1.0,
+            "metric_change": 1.0,
+            "oos_aggregate": 1.0,
+            "oos_join": 1.0,
+            "oos_lookup": 0.7778,
+            "oos_prior": 1.0,
+            "oos_report": 1.0,
+            "supply_chain": 1.0
+          }
+        },
+        "coverage@gold": {
+          "accuracy": 0.9652,
+          "query_usd_per_q": 0.000446,
+          "build_usd": 0.4601,
+          "usd_per_q_at": {
+            "115": 0.004446,
+            "1000": 0.000906,
+            "10000": 0.000492
+          },
+          "mean_latency_s": 5.25,
+          "p50_latency_s": 3.26,
+          "paths_used": {
+            "scan": 10,
+            "index": 84,
+            "view_sql": 21
+          },
+          "per_hop": {
+            "aggregate": 1.0,
+            "cross_year": 1.0,
+            "deep_chain": 1.0,
+            "metric_change": 1.0,
+            "oos_aggregate": 1.0,
+            "oos_join": 1.0,
+            "oos_lookup": 0.7778,
+            "oos_prior": 1.0,
+            "oos_report": 1.0,
+            "supply_chain": 1.0
+          }
+        },
+        "coverage_escalate@gold": {
+          "accuracy": 0.9652,
+          "query_usd_per_q": 0.000446,
+          "build_usd": 0.4601,
+          "usd_per_q_at": {
+            "115": 0.004446,
+            "1000": 0.000906,
+            "10000": 0.000492
+          },
+          "mean_latency_s": 5.25,
+          "p50_latency_s": 3.26,
+          "paths_used": {
+            "scan": 10,
+            "index": 84,
+            "view_sql": 21
+          },
+          "per_hop": {
+            "aggregate": 1.0,
+            "cross_year": 1.0,
+            "deep_chain": 1.0,
+            "metric_change": 1.0,
+            "oos_aggregate": 1.0,
+            "oos_join": 1.0,
+            "oos_lookup": 0.7778,
+            "oos_prior": 1.0,
+            "oos_report": 1.0,
+            "supply_chain": 1.0
+          }
+        },
+        "coverage_all@gold": {
+          "accuracy": 0.9652,
+          "query_usd_per_q": 0.000536,
+          "build_usd": 0.4601,
+          "usd_per_q_at": {
+            "115": 0.004537,
+            "1000": 0.000996,
+            "10000": 0.000582
+          },
+          "mean_latency_s": 6.94,
+          "p50_latency_s": 6.59,
+          "paths_used": {
+            "scan": 10,
+            "index": 42,
+            "view_sql": 63
+          },
+          "per_hop": {
+            "aggregate": 1.0,
+            "cross_year": 1.0,
+            "deep_chain": 1.0,
+            "metric_change": 1.0,
+            "oos_aggregate": 1.0,
+            "oos_join": 1.0,
+            "oos_lookup": 0.7778,
+            "oos_prior": 1.0,
+            "oos_report": 1.0,
+            "supply_chain": 1.0
+          }
+        },
+        "coverage_lazy@gold": {
+          "accuracy": 0.9652,
+          "query_usd_per_q": 0.000446,
+          "build_usd": 0.4601,
+          "usd_per_q_at": {
+            "115": 0.004446,
+            "1000": 0.000906,
+            "10000": 0.000492
+          },
+          "mean_latency_s": 5.25,
+          "p50_latency_s": 3.26,
+          "paths_used": {
+            "scan": 10,
+            "index": 84,
+            "view_sql": 21
+          },
+          "per_hop": {
+            "aggregate": 1.0,
+            "cross_year": 1.0,
+            "deep_chain": 1.0,
+            "metric_change": 1.0,
+            "oos_aggregate": 1.0,
+            "oos_join": 1.0,
+            "oos_lookup": 0.7778,
+            "oos_prior": 1.0,
+            "oos_report": 1.0,
+            "supply_chain": 1.0
+          }
+        },
+        "coverage_lazy_always@gold": {
+          "accuracy": 0.9652,
+          "query_usd_per_q": 0.00094,
+          "build_usd": 0.4601,
+          "usd_per_q_at": {
+            "115": 0.00494,
+            "1000": 0.0014,
+            "10000": 0.000986
+          },
+          "mean_latency_s": 15.15,
+          "p50_latency_s": 3.26,
+          "paths_used": {
+            "index": 84,
+            "view_sql": 21,
+            "view_lazy": 10
+          },
+          "per_hop": {
+            "aggregate": 1.0,
+            "cross_year": 1.0,
+            "deep_chain": 1.0,
+            "metric_change": 1.0,
+            "oos_aggregate": 1.0,
+            "oos_join": 1.0,
+            "oos_lookup": 0.7778,
+            "oos_prior": 1.0,
+            "oos_report": 1.0,
+            "supply_chain": 1.0
+          }
+        },
+        "posthoc_uncovered_lookup_agent@gold": {
+          "accuracy": 1.0,
+          "query_usd_per_q": 0.000525,
+          "build_usd": 0.4601,
+          "usd_per_q_at": {
+            "115": 0.004525,
+            "1000": 0.000985,
+            "10000": 0.000571
+          },
+          "mean_latency_s": 6.05,
+          "p50_latency_s": 5.13,
+          "paths_used": {
+            "scan": 10,
+            "index": 42,
+            "view_sql": 21,
+            "agent": 42
+          },
+          "per_hop": {
+            "aggregate": 1.0,
+            "cross_year": 1.0,
+            "deep_chain": 1.0,
+            "metric_change": 1.0,
+            "oos_aggregate": 1.0,
+            "oos_join": 1.0,
+            "oos_lookup": 1.0,
+            "oos_prior": 1.0,
+            "oos_report": 1.0,
+            "supply_chain": 1.0
+          }
+        }
+      }
+    },
+    "540": {
+      "companies": 546,
+      "chars": 3019947,
+      "n_questions": 115,
+      "scan_fits": false,
+      "view_build_usd": 1.3425,
+      "single": {
+        "index": {
+          "accuracy": 0.6783,
+          "query_usd_per_q": 0.000216,
+          "build_usd": 0.0,
+          "usd_per_q_at": {
+            "115": 0.000216,
+            "1000": 0.000216,
+            "10000": 0.000216
+          },
+          "mean_latency_s": 3.73,
+          "p50_latency_s": 3.36,
+          "per_hop": {
+            "aggregate": 0.0,
+            "cross_year": 1.0,
+            "deep_chain": 0.0,
+            "metric_change": 1.0,
+            "oos_aggregate": 0.0,
+            "oos_join": 0.0,
+            "oos_lookup": 0.7222,
+            "oos_prior": 0.8333,
+            "oos_report": 1.0,
+            "supply_chain": 0.0
+          }
+        },
+        "index_join": {
+          "accuracy": 0.713,
+          "query_usd_per_q": 0.00048,
+          "build_usd": 0.0,
+          "usd_per_q_at": {
+            "115": 0.00048,
+            "1000": 0.00048,
+            "10000": 0.00048
+          },
+          "mean_latency_s": 8.12,
+          "p50_latency_s": 6.49,
+          "per_hop": {
+            "aggregate": 0.0,
+            "cross_year": 1.0,
+            "deep_chain": 0.0,
+            "metric_change": 1.0,
+            "oos_aggregate": 0.0,
+            "oos_join": 0.0,
+            "oos_lookup": 0.7222,
+            "oos_prior": 0.8333,
+            "oos_report": 1.0,
+            "supply_chain": 0.5
+          }
+        },
+        "view": {
+          "accuracy": 0.5043,
+          "query_usd_per_q": 0.000559,
+          "build_usd": 1.3425,
+          "usd_per_q_at": {
+            "115": 0.012233,
+            "1000": 0.001902,
+            "10000": 0.000694
+          },
+          "mean_latency_s": 4.84,
+          "p50_latency_s": 4.02,
+          "per_hop": {
+            "aggregate": 0.5833,
+            "cross_year": 1.0,
+            "deep_chain": 1.0,
+            "metric_change": 1.0,
+            "oos_aggregate": 0.0,
+            "oos_join": 0.0,
+            "oos_lookup": 0.0,
+            "oos_prior": 0.0,
+            "oos_report": 0.0,
+            "supply_chain": 1.0
+          }
+        },
+        "view_sql": {
+          "accuracy": 0.5478,
+          "query_usd_per_q": 0.001152,
+          "build_usd": 1.3425,
+          "usd_per_q_at": {
+            "115": 0.012827,
+            "1000": 0.002495,
+            "10000": 0.001287
+          },
+          "mean_latency_s": 16.98,
+          "p50_latency_s": 8.67,
+          "per_hop": {
+            "aggregate": 1.0,
+            "cross_year": 1.0,
+            "deep_chain": 1.0,
+            "metric_change": 1.0,
+            "oos_aggregate": 0.0,
+            "oos_join": 0.0,
+            "oos_lookup": 0.0,
+            "oos_prior": 0.0,
+            "oos_report": 0.0,
+            "supply_chain": 1.0
+          }
+        },
+        "agent": {
+          "accuracy": 0.8696,
+          "query_usd_per_q": 0.001441,
+          "build_usd": 0.0,
+          "usd_per_q_at": {
+            "115": 0.001441,
+            "1000": 0.001441,
+            "10000": 0.001441
+          },
+          "mean_latency_s": 13.0,
+          "p50_latency_s": 6.79,
+          "per_hop": {
+            "aggregate": 0.1667,
+            "cross_year": 1.0,
+            "deep_chain": 1.0,
+            "metric_change": 1.0,
+            "oos_aggregate": 0.1667,
+            "oos_join": 1.0,
+            "oos_lookup": 1.0,
+            "oos_prior": 1.0,
+            "oos_report": 1.0,
+            "supply_chain": 1.0
+          }
+        }
+      },
+      "oracle": {
+        "accuracy": 1.0,
+        "query_usd_per_q": 0.001136,
+        "build_usd": 1.3425,
+        "usd_per_q_at": {
+          "115": 0.012811,
+          "1000": 0.002479,
+          "10000": 0.001271
+        },
+        "mean_latency_s": 21.4,
+        "p50_latency_s": 3.59
+      },
+      "policies": {
+        "scan_or_view@original": {
+          "accuracy": 0.8174,
+          "query_usd_per_q": 0.000696,
+          "build_usd": 1.3425,
+          "usd_per_q_at": {
+            "115": 0.01237,
+            "1000": 0.002038,
+            "10000": 0.00083
+          },
+          "mean_latency_s": 10.08,
+          "p50_latency_s": 7.19,
+          "paths_used": {
+            "index": 84,
+            "view": 31
+          },
+          "per_hop": {
+            "aggregate": 0.5833,
+            "cross_year": 1.0,
+            "deep_chain": 1.0,
+            "metric_change": 1.0,
+            "oos_aggregate": 0.0,
+            "oos_join": 0.0,
+            "oos_lookup": 0.7222,
+            "oos_prior": 0.8333,
+            "oos_report": 1.0,
+            "supply_chain": 1.0
+          }
+        },
+        "sql_first@original": {
+          "accuracy": 0.8609,
+          "query_usd_per_q": 0.001015,
+          "build_usd": 1.3425,
+          "usd_per_q_at": {
+            "115": 0.012689,
+            "1000": 0.002357,
+            "10000": 0.001149
+          },
+          "mean_latency_s": 15.5,
+          "p50_latency_s": 8.05,
+          "paths_used": {
+            "index": 84,
+            "view_sql": 31
+          },
+          "per_hop": {
+            "aggregate": 1.0,
+            "cross_year": 1.0,
+            "deep_chain": 1.0,
+            "metric_change": 1.0,
+            "oos_aggregate": 0.0,
+            "oos_join": 0.0,
+            "oos_lookup": 0.7222,
+            "oos_prior": 0.8333,
+            "oos_report": 1.0,
+            "supply_chain": 1.0
+          }
+        },
+        "sql_escalate@original": {
+          "accuracy": 0.9043,
+          "query_usd_per_q": 0.001372,
+          "build_usd": 1.3425,
+          "usd_per_q_at": {
+            "115": 0.013046,
+            "1000": 0.002715,
+            "10000": 0.001506
+          },
+          "mean_latency_s": 17.98,
+          "p50_latency_s": 8.05,
+          "paths_used": {
+            "index": 84,
+            "view_sql": 31,
+            "agent": 10
+          },
+          "per_hop": {
+            "aggregate": 1.0,
+            "cross_year": 1.0,
+            "deep_chain": 1.0,
+            "metric_change": 1.0,
+            "oos_aggregate": 0.1667,
+            "oos_join": 1.0,
+            "oos_lookup": 0.7222,
+            "oos_prior": 0.8333,
+            "oos_report": 1.0,
+            "supply_chain": 1.0
+          }
+        },
+        "coverage@original": {
+          "accuracy": 0.9043,
+          "query_usd_per_q": 0.000932,
+          "build_usd": 1.3425,
+          "usd_per_q_at": {
+            "115": 0.012606,
+            "1000": 0.002274,
+            "10000": 0.001066
+          },
+          "mean_latency_s": 12.13,
+          "p50_latency_s": 8.05,
+          "paths_used": {
+            "index": 84,
+            "view_sql": 21,
+            "agent": 10
+          },
+          "per_hop": {
+            "aggregate": 1.0,
+            "cross_year": 1.0,
+            "deep_chain": 1.0,
+            "metric_change": 1.0,
+            "oos_aggregate": 0.1667,
+            "oos_join": 1.0,
+            "oos_lookup": 0.7222,
+            "oos_prior": 0.8333,
+            "oos_report": 1.0,
+            "supply_chain": 1.0
+          }
+        },
+        "coverage_escalate@original": {
+          "accuracy": 0.9043,
+          "query_usd_per_q": 0.000932,
+          "build_usd": 1.3425,
+          "usd_per_q_at": {
+            "115": 0.012606,
+            "1000": 0.002274,
+            "10000": 0.001066
+          },
+          "mean_latency_s": 12.13,
+          "p50_latency_s": 8.05,
+          "paths_used": {
+            "index": 84,
+            "view_sql": 21,
+            "agent": 10
+          },
+          "per_hop": {
+            "aggregate": 1.0,
+            "cross_year": 1.0,
+            "deep_chain": 1.0,
+            "metric_change": 1.0,
+            "oos_aggregate": 0.1667,
+            "oos_join": 1.0,
+            "oos_lookup": 0.7222,
+            "oos_prior": 0.8333,
+            "oos_report": 1.0,
+            "supply_chain": 1.0
+          }
+        },
+        "coverage_all@original": {
+          "accuracy": 0.9043,
+          "query_usd_per_q": 0.001016,
+          "build_usd": 1.3425,
+          "usd_per_q_at": {
+            "115": 0.01269,
+            "1000": 0.002359,
+            "10000": 0.001151
+          },
+          "mean_latency_s": 13.6,
+          "p50_latency_s": 10.62,
+          "paths_used": {
+            "index": 42,
+            "view_sql": 63,
+            "agent": 10
+          },
+          "per_hop": {
+            "aggregate": 1.0,
+            "cross_year": 1.0,
+            "deep_chain": 1.0,
+            "metric_change": 1.0,
+            "oos_aggregate": 0.1667,
+            "oos_join": 1.0,
+            "oos_lookup": 0.7222,
+            "oos_prior": 0.8333,
+            "oos_report": 1.0,
+            "supply_chain": 1.0
+          }
+        },
+        "coverage_lazy@original": {
+          "accuracy": 0.9391,
+          "query_usd_per_q": 0.001811,
+          "build_usd": 1.3425,
+          "usd_per_q_at": {
+            "115": 0.013485,
+            "1000": 0.003154,
+            "10000": 0.001945
+          },
+          "mean_latency_s": 32.92,
+          "p50_latency_s": 8.05,
+          "paths_used": {
+            "index": 84,
+            "view_sql": 21,
+            "view_lazy": 10
+          },
+          "per_hop": {
+            "aggregate": 1.0,
+            "cross_year": 1.0,
+            "deep_chain": 1.0,
+            "metric_change": 1.0,
+            "oos_aggregate": 1.0,
+            "oos_join": 0.75,
+            "oos_lookup": 0.7222,
+            "oos_prior": 0.8333,
+            "oos_report": 1.0,
+            "supply_chain": 1.0
+          }
+        },
+        "coverage_lazy_always@original": {
+          "accuracy": 0.9391,
+          "query_usd_per_q": 0.001811,
+          "build_usd": 1.3425,
+          "usd_per_q_at": {
+            "115": 0.013485,
+            "1000": 0.003154,
+            "10000": 0.001945
+          },
+          "mean_latency_s": 32.92,
+          "p50_latency_s": 8.05,
+          "paths_used": {
+            "index": 84,
+            "view_sql": 21,
+            "view_lazy": 10
+          },
+          "per_hop": {
+            "aggregate": 1.0,
+            "cross_year": 1.0,
+            "deep_chain": 1.0,
+            "metric_change": 1.0,
+            "oos_aggregate": 1.0,
+            "oos_join": 0.75,
+            "oos_lookup": 0.7222,
+            "oos_prior": 0.8333,
+            "oos_report": 1.0,
+            "supply_chain": 1.0
+          }
+        },
+        "posthoc_uncovered_lookup_agent@original": {
+          "accuracy": 0.9913,
+          "query_usd_per_q": 0.001913,
+          "build_usd": 1.3425,
+          "usd_per_q_at": {
+            "115": 0.013587,
+            "1000": 0.003256,
+            "10000": 0.002047
+          },
+          "mean_latency_s": 33.9,
+          "p50_latency_s": 9.32,
+          "paths_used": {
+            "index": 42,
+            "view_sql": 21,
+            "view_lazy": 10,
+            "agent": 42
+          },
+          "per_hop": {
+            "aggregate": 1.0,
+            "cross_year": 1.0,
+            "deep_chain": 1.0,
+            "metric_change": 1.0,
+            "oos_aggregate": 1.0,
+            "oos_join": 0.75,
+            "oos_lookup": 1.0,
+            "oos_prior": 1.0,
+            "oos_report": 1.0,
+            "supply_chain": 1.0
+          }
+        },
+        "scan_or_view@paraphrased": {
+          "accuracy": 0.8,
+          "query_usd_per_q": 0.00077,
+          "build_usd": 1.3425,
+          "usd_per_q_at": {
+            "115": 0.012444,
+            "1000": 0.002113,
+            "10000": 0.000904
+          },
+          "mean_latency_s": 10.85,
+          "p50_latency_s": 7.28,
+          "paths_used": {
+            "index": 82,
+            "view": 33
+          },
+          "per_hop": {
+            "aggregate": 0.5833,
+            "cross_year": 1.0,
+            "deep_chain": 1.0,
+            "metric_change": 1.0,
+            "oos_aggregate": 0.0,
+            "oos_join": 0.0,
+            "oos_lookup": 0.7222,
+            "oos_prior": 0.6667,
+            "oos_report": 0.9444,
+            "supply_chain": 1.0
+          }
+        },
+        "sql_first@paraphrased": {
+          "accuracy": 0.8435,
+          "query_usd_per_q": 0.001101,
+          "build_usd": 1.3425,
+          "usd_per_q_at": {
+            "115": 0.012775,
+            "1000": 0.002443,
+            "10000": 0.001235
+          },
+          "mean_latency_s": 16.51,
+          "p50_latency_s": 7.9,
+          "paths_used": {
+            "index": 82,
+            "view_sql": 33
+          },
+          "per_hop": {
+            "aggregate": 1.0,
+            "cross_year": 1.0,
+            "deep_chain": 1.0,
+            "metric_change": 1.0,
+            "oos_aggregate": 0.0,
+            "oos_join": 0.0,
+            "oos_lookup": 0.7222,
+            "oos_prior": 0.6667,
+            "oos_report": 0.9444,
+            "supply_chain": 1.0
+          }
+        },
+        "sql_escalate@paraphrased": {
+          "accuracy": 0.9043,
+          "query_usd_per_q": 0.001465,
+          "build_usd": 1.3425,
+          "usd_per_q_at": {
+            "115": 0.013139,
+            "1000": 0.002808,
+            "10000": 0.001599
+          },
+          "mean_latency_s": 19.09,
+          "p50_latency_s": 7.9,
+          "paths_used": {
+            "index": 82,
+            "view_sql": 33,
+            "agent": 12
+          },
+          "per_hop": {
+            "aggregate": 1.0,
+            "cross_year": 1.0,
+            "deep_chain": 1.0,
+            "metric_change": 1.0,
+            "oos_aggregate": 0.1667,
+            "oos_join": 1.0,
+            "oos_lookup": 0.7222,
+            "oos_prior": 0.8333,
+            "oos_report": 1.0,
+            "supply_chain": 1.0
+          }
+        },
+        "coverage@paraphrased": {
+          "accuracy": 0.9043,
+          "query_usd_per_q": 0.001008,
+          "build_usd": 1.3425,
+          "usd_per_q_at": {
+            "115": 0.012682,
+            "1000": 0.00235,
+            "10000": 0.001142
+          },
+          "mean_latency_s": 12.96,
+          "p50_latency_s": 7.9,
+          "paths_used": {
+            "index": 82,
+            "view_sql": 21,
+            "agent": 12
+          },
+          "per_hop": {
+            "aggregate": 1.0,
+            "cross_year": 1.0,
+            "deep_chain": 1.0,
+            "metric_change": 1.0,
+            "oos_aggregate": 0.1667,
+            "oos_join": 1.0,
+            "oos_lookup": 0.7222,
+            "oos_prior": 0.8333,
+            "oos_report": 1.0,
+            "supply_chain": 1.0
+          }
+        },
+        "coverage_escalate@paraphrased": {
+          "accuracy": 0.9043,
+          "query_usd_per_q": 0.001008,
+          "build_usd": 1.3425,
+          "usd_per_q_at": {
+            "115": 0.012682,
+            "1000": 0.00235,
+            "10000": 0.001142
+          },
+          "mean_latency_s": 12.96,
+          "p50_latency_s": 7.9,
+          "paths_used": {
+            "index": 82,
+            "view_sql": 21,
+            "agent": 12
+          },
+          "per_hop": {
+            "aggregate": 1.0,
+            "cross_year": 1.0,
+            "deep_chain": 1.0,
+            "metric_change": 1.0,
+            "oos_aggregate": 0.1667,
+            "oos_join": 1.0,
+            "oos_lookup": 0.7222,
+            "oos_prior": 0.8333,
+            "oos_report": 1.0,
+            "supply_chain": 1.0
+          }
+        },
+        "coverage_all@paraphrased": {
+          "accuracy": 0.9043,
+          "query_usd_per_q": 0.001092,
+          "build_usd": 1.3425,
+          "usd_per_q_at": {
+            "115": 0.012766,
+            "1000": 0.002435,
+            "10000": 0.001226
+          },
+          "mean_latency_s": 14.43,
+          "p50_latency_s": 10.4,
+          "paths_used": {
+            "index": 40,
+            "view_sql": 63,
+            "agent": 12
+          },
+          "per_hop": {
+            "aggregate": 1.0,
+            "cross_year": 1.0,
+            "deep_chain": 1.0,
+            "metric_change": 1.0,
+            "oos_aggregate": 0.1667,
+            "oos_join": 1.0,
+            "oos_lookup": 0.7222,
+            "oos_prior": 0.8333,
+            "oos_report": 1.0,
+            "supply_chain": 1.0
+          }
+        },
+        "coverage_lazy@paraphrased": {
+          "accuracy": 0.9391,
+          "query_usd_per_q": 0.001887,
+          "build_usd": 1.3425,
+          "usd_per_q_at": {
+            "115": 0.013561,
+            "1000": 0.00323,
+            "10000": 0.002021
+          },
+          "mean_latency_s": 33.75,
+          "p50_latency_s": 7.9,
+          "paths_used": {
+            "index": 82,
+            "view_sql": 21,
+            "view_lazy": 10,
+            "agent": 2
+          },
+          "per_hop": {
+            "aggregate": 1.0,
+            "cross_year": 1.0,
+            "deep_chain": 1.0,
+            "metric_change": 1.0,
+            "oos_aggregate": 1.0,
+            "oos_join": 0.75,
+            "oos_lookup": 0.7222,
+            "oos_prior": 0.8333,
+            "oos_report": 1.0,
+            "supply_chain": 1.0
+          }
+        },
+        "coverage_lazy_always@paraphrased": {
+          "accuracy": 0.9391,
+          "query_usd_per_q": 0.001887,
+          "build_usd": 1.3425,
+          "usd_per_q_at": {
+            "115": 0.013561,
+            "1000": 0.00323,
+            "10000": 0.002021
+          },
+          "mean_latency_s": 33.75,
+          "p50_latency_s": 7.9,
+          "paths_used": {
+            "index": 82,
+            "view_sql": 21,
+            "view_lazy": 10,
+            "agent": 2
+          },
+          "per_hop": {
+            "aggregate": 1.0,
+            "cross_year": 1.0,
+            "deep_chain": 1.0,
+            "metric_change": 1.0,
+            "oos_aggregate": 1.0,
+            "oos_join": 0.75,
+            "oos_lookup": 0.7222,
+            "oos_prior": 0.8333,
+            "oos_report": 1.0,
+            "supply_chain": 1.0
+          }
+        },
+        "posthoc_uncovered_lookup_agent@paraphrased": {
+          "accuracy": 0.9913,
+          "query_usd_per_q": 0.001985,
+          "build_usd": 1.3425,
+          "usd_per_q_at": {
+            "115": 0.013659,
+            "1000": 0.003328,
+            "10000": 0.002119
+          },
+          "mean_latency_s": 34.68,
+          "p50_latency_s": 9.44,
+          "paths_used": {
+            "index": 42,
+            "view_sql": 21,
+            "view_lazy": 10,
+            "agent": 42
+          },
+          "per_hop": {
+            "aggregate": 1.0,
+            "cross_year": 1.0,
+            "deep_chain": 1.0,
+            "metric_change": 1.0,
+            "oos_aggregate": 1.0,
+            "oos_join": 0.75,
+            "oos_lookup": 1.0,
+            "oos_prior": 1.0,
+            "oos_report": 1.0,
+            "supply_chain": 1.0
+          }
+        },
+        "scan_or_view@gold": {
+          "accuracy": 0.8174,
+          "query_usd_per_q": 0.000371,
+          "build_usd": 1.3425,
+          "usd_per_q_at": {
+            "115": 0.012046,
+            "1000": 0.001714,
+            "10000": 0.000506
+          },
+          "mean_latency_s": 4.67,
+          "p50_latency_s": 3.42,
+          "paths_used": {
+            "index": 84,
+            "view": 31
+          },
+          "per_hop": {
+            "aggregate": 0.5833,
+            "cross_year": 1.0,
+            "deep_chain": 1.0,
+            "metric_change": 1.0,
+            "oos_aggregate": 0.0,
+            "oos_join": 0.0,
+            "oos_lookup": 0.7222,
+            "oos_prior": 0.8333,
+            "oos_report": 1.0,
+            "supply_chain": 1.0
+          }
+        },
+        "sql_first@gold": {
+          "accuracy": 0.8609,
+          "query_usd_per_q": 0.00069,
+          "build_usd": 1.3425,
+          "usd_per_q_at": {
+            "115": 0.012364,
+            "1000": 0.002033,
+            "10000": 0.000824
+          },
+          "mean_latency_s": 10.1,
+          "p50_latency_s": 3.53,
+          "paths_used": {
+            "index": 84,
+            "view_sql": 31
+          },
+          "per_hop": {
+            "aggregate": 1.0,
+            "cross_year": 1.0,
+            "deep_chain": 1.0,
+            "metric_change": 1.0,
+            "oos_aggregate": 0.0,
+            "oos_join": 0.0,
+            "oos_lookup": 0.7222,
+            "oos_prior": 0.8333,
+            "oos_report": 1.0,
+            "supply_chain": 1.0
+          }
+        },
+        "sql_escalate@gold": {
+          "accuracy": 0.9043,
+          "query_usd_per_q": 0.001048,
+          "build_usd": 1.3425,
+          "usd_per_q_at": {
+            "115": 0.012722,
+            "1000": 0.00239,
+            "10000": 0.001182
+          },
+          "mean_latency_s": 12.58,
+          "p50_latency_s": 3.53,
+          "paths_used": {
+            "index": 84,
+            "view_sql": 31,
+            "agent": 10
+          },
+          "per_hop": {
+            "aggregate": 1.0,
+            "cross_year": 1.0,
+            "deep_chain": 1.0,
+            "metric_change": 1.0,
+            "oos_aggregate": 0.1667,
+            "oos_join": 1.0,
+            "oos_lookup": 0.7222,
+            "oos_prior": 0.8333,
+            "oos_report": 1.0,
+            "supply_chain": 1.0
+          }
+        },
+        "coverage@gold": {
+          "accuracy": 0.9043,
+          "query_usd_per_q": 0.000607,
+          "build_usd": 1.3425,
+          "usd_per_q_at": {
+            "115": 0.012281,
+            "1000": 0.00195,
+            "10000": 0.000741
+          },
+          "mean_latency_s": 6.72,
+          "p50_latency_s": 3.53,
+          "paths_used": {
+            "index": 84,
+            "view_sql": 21,
+            "agent": 10
+          },
+          "per_hop": {
+            "aggregate": 1.0,
+            "cross_year": 1.0,
+            "deep_chain": 1.0,
+            "metric_change": 1.0,
+            "oos_aggregate": 0.1667,
+            "oos_join": 1.0,
+            "oos_lookup": 0.7222,
+            "oos_prior": 0.8333,
+            "oos_report": 1.0,
+            "supply_chain": 1.0
+          }
+        },
+        "coverage_escalate@gold": {
+          "accuracy": 0.9043,
+          "query_usd_per_q": 0.000607,
+          "build_usd": 1.3425,
+          "usd_per_q_at": {
+            "115": 0.012281,
+            "1000": 0.00195,
+            "10000": 0.000741
+          },
+          "mean_latency_s": 6.72,
+          "p50_latency_s": 3.53,
+          "paths_used": {
+            "index": 84,
+            "view_sql": 21,
+            "agent": 10
+          },
+          "per_hop": {
+            "aggregate": 1.0,
+            "cross_year": 1.0,
+            "deep_chain": 1.0,
+            "metric_change": 1.0,
+            "oos_aggregate": 0.1667,
+            "oos_join": 1.0,
+            "oos_lookup": 0.7222,
+            "oos_prior": 0.8333,
+            "oos_report": 1.0,
+            "supply_chain": 1.0
+          }
+        },
+        "coverage_all@gold": {
+          "accuracy": 0.9043,
+          "query_usd_per_q": 0.000692,
+          "build_usd": 1.3425,
+          "usd_per_q_at": {
+            "115": 0.012366,
+            "1000": 0.002034,
+            "10000": 0.000826
+          },
+          "mean_latency_s": 8.19,
+          "p50_latency_s": 6.27,
+          "paths_used": {
+            "index": 42,
+            "view_sql": 63,
+            "agent": 10
+          },
+          "per_hop": {
+            "aggregate": 1.0,
+            "cross_year": 1.0,
+            "deep_chain": 1.0,
+            "metric_change": 1.0,
+            "oos_aggregate": 0.1667,
+            "oos_join": 1.0,
+            "oos_lookup": 0.7222,
+            "oos_prior": 0.8333,
+            "oos_report": 1.0,
+            "supply_chain": 1.0
+          }
+        },
+        "coverage_lazy@gold": {
+          "accuracy": 0.9391,
+          "query_usd_per_q": 0.001487,
+          "build_usd": 1.3425,
+          "usd_per_q_at": {
+            "115": 0.013161,
+            "1000": 0.002829,
+            "10000": 0.001621
+          },
+          "mean_latency_s": 27.51,
+          "p50_latency_s": 3.53,
+          "paths_used": {
+            "index": 84,
+            "view_sql": 21,
+            "view_lazy": 10
+          },
+          "per_hop": {
+            "aggregate": 1.0,
+            "cross_year": 1.0,
+            "deep_chain": 1.0,
+            "metric_change": 1.0,
+            "oos_aggregate": 1.0,
+            "oos_join": 0.75,
+            "oos_lookup": 0.7222,
+            "oos_prior": 0.8333,
+            "oos_report": 1.0,
+            "supply_chain": 1.0
+          }
+        },
+        "coverage_lazy_always@gold": {
+          "accuracy": 0.9391,
+          "query_usd_per_q": 0.001487,
+          "build_usd": 1.3425,
+          "usd_per_q_at": {
+            "115": 0.013161,
+            "1000": 0.002829,
+            "10000": 0.001621
+          },
+          "mean_latency_s": 27.51,
+          "p50_latency_s": 3.53,
+          "paths_used": {
+            "index": 84,
+            "view_sql": 21,
+            "view_lazy": 10
+          },
+          "per_hop": {
+            "aggregate": 1.0,
+            "cross_year": 1.0,
+            "deep_chain": 1.0,
+            "metric_change": 1.0,
+            "oos_aggregate": 1.0,
+            "oos_join": 0.75,
+            "oos_lookup": 0.7222,
+            "oos_prior": 0.8333,
+            "oos_report": 1.0,
+            "supply_chain": 1.0
+          }
+        },
+        "posthoc_uncovered_lookup_agent@gold": {
+          "accuracy": 0.9913,
+          "query_usd_per_q": 0.001589,
+          "build_usd": 1.3425,
+          "usd_per_q_at": {
+            "115": 0.013263,
+            "1000": 0.002931,
+            "10000": 0.001723
+          },
+          "mean_latency_s": 28.49,
+          "p50_latency_s": 5.28,
+          "paths_used": {
+            "index": 42,
+            "view_sql": 21,
+            "view_lazy": 10,
+            "agent": 42
+          },
+          "per_hop": {
+            "aggregate": 1.0,
+            "cross_year": 1.0,
+            "deep_chain": 1.0,
+            "metric_change": 1.0,
+            "oos_aggregate": 1.0,
+            "oos_join": 0.75,
+            "oos_lookup": 1.0,
+            "oos_prior": 1.0,
+            "oos_report": 1.0,
+            "supply_chain": 1.0
+          }
+        }
+      }
+    }
+  }
+}

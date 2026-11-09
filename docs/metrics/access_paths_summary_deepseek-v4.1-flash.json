@@ -1,0 +1,778 @@
+{
+  "_meta": {
+    "model": "deepseek-v4.1-flash",
+    "tag": "deepseek-v4.1-flash"
+  },
+  "0": {
+    "companies": 6,
+    "docs": 54,
+    "chars": 33086,
+    "paths": {
+      "scan": {
+        "n": 63,
+        "accuracy": 1.0,
+        "errors": 0,
+        "per_hop": {
+          "aggregate": 1.0,
+          "cross_year": 1.0,
+          "deep_chain": 1.0,
+          "metric_change": 1.0,
+          "supply_chain": 1.0
+        },
+        "query_usage": {
+          "calls": 63,
+          "prompt": 1111803,
+          "hit": 1079296,
+          "miss": 32507,
+          "completion": 10028,
+          "reasoning": 0,
+          "latency_s": 200.14,
+          "cached_response": 5,
+          "usd": 0.014131
+        },
+        "usd_per_q": 0.000224,
+        "prompt_tokens_per_q": 17648,
+        "cache_hit_rate": 0.9708,
+        "p50_latency_s": 2.84,
+        "wall_s": 45.4
+      },
+      "index": {
+        "n": 63,
+        "accuracy": 0.8571,
+        "errors": 0,
+        "per_hop": {
+          "aggregate": 1.0,
+          "cross_year": 1.0,
+          "deep_chain": 0.0,
+          "metric_change": 1.0,
+          "supply_chain": 0.0
+        },
+        "query_usage": {
+          "calls": 63,
+          "prompt": 46986,
+          "hit": 6016,
+          "miss": 40970,
+          "completion": 10123,
+          "reasoning": 0,
+          "latency_s": 226.35100000000003,
+          "cached_response": 5,
+          "usd": 0.012237
+        },
+        "usd_per_q": 0.000194,
+        "prompt_tokens_per_q": 746,
+        "cache_hit_rate": 0.128,
+        "p50_latency_s": 3.41,
+        "wall_s": 61.5
+      },
+      "index_join": {
+        "n": 63,
+        "accuracy": 1.0,
+        "errors": 0,
+        "per_hop": {
+          "aggregate": 1.0,
+          "cross_year": 1.0,
+          "deep_chain": 1.0,
+          "metric_change": 1.0,
+          "supply_chain": 1.0
+        },
+        "query_usage": {
+          "calls": 126,
+          "prompt": 95403,
+          "hit": 11648,
+          "miss": 83755,
+          "completion": 25861,
+          "reasoning": 0,
+          "latency_s": 493.5099999999999,
+          "cached_response": 56,
+          "usd": 0.028115
+        },
+        "usd_per_q": 0.000446,
+        "prompt_tokens_per_q": 1514,
+        "cache_hit_rate": 0.1221,
+        "p50_latency_s": 6.95,
+        "wall_s": 80.5
+      },
+      "view": {
+        "n": 63,
+        "accuracy": 1.0,
+        "errors": 0,
+        "per_hop": {
+          "aggregate": 1.0,
+          "cross_year": 1.0,
+          "deep_chain": 1.0,
+          "metric_change": 1.0,
+          "supply_chain": 1.0
+        },
+        "query_usage": {
+          "calls": 63,
+          "prompt": 51891,
+          "hit": 31744,
+          "miss": 20147,
+          "completion": 9506,
+          "reasoning": 0,
+          "latency_s": 134.139,
+          "cached_response": 5,
+          "usd": 0.008821
+        },
+        "usd_per_q": 0.00014,
+        "prompt_tokens_per_q": 824,
+        "cache_hit_rate": 0.6117,
+        "p50_latency_s": 2.1,
+        "build_usage": {
+          "calls": 54,
+          "prompt": 25479,
+          "hit": 0,
+          "miss": 25479,
+          "completion": 18203,
+          "reasoning": 0,
+          "latency_s": 230.093,
+          "cached_response": 54,
+          "usd": 0.014744
+        },
+        "usd_per_q_amortized": 0.000374,
+        "wall_s": 31.2
+      },
+      "agent": {
+        "n": 63,
+        "accuracy": 1.0,
+        "errors": 0,
+        "per_hop": {
+          "aggregate": 1.0,
+          "cross_year": 1.0,
+          "deep_chain": 1.0,
+          "metric_change": 1.0,
+          "supply_chain": 1.0
+        },
+        "query_usage": {
+          "calls": 336,
+          "prompt": 845010,
+          "hit": 577664,
+          "miss": 267346,
+          "completion": 44912,
+          "reasoning": 0,
+          "latency_s": 731.4580000000002,
+          "cached_response": 17,
+          "usd": 0.068782
+        },
+        "usd_per_q": 0.001092,
+        "prompt_tokens_per_q": 13413,
+        "cache_hit_rate": 0.6836,
+        "p50_latency_s": 8.11,
+        "wall_s": 184.3
+      },
+      "view_sql": {
+        "n": 63,
+        "accuracy": 1.0,
+        "errors": 0,
+        "per_hop": {
+          "aggregate": 1.0,
+          "cross_year": 1.0,
+          "deep_chain": 1.0,
+          "metric_change": 1.0,
+          "supply_chain": 1.0
+        },
+        "query_usage": {
+          "calls": 126,
+          "prompt": 49334,
+          "hit": 23424,
+          "miss": 25910,
+          "completion": 47789,
+          "reasoning": 0,
+          "latency_s": 582.006,
+          "cached_response": 126,
+          "usd": 0.03263
+        },
+        "usd_per_q": 0.000518,
+        "prompt_tokens_per_q": 783,
+        "cache_hit_rate": 0.4748,
+        "p50_latency_s": 8.18,
+        "build_usage": {
+          "calls": 54,
+          "prompt": 25479,
+          "hit": 0,
+          "miss": 25479,
+          "completion": 18203,
+          "reasoning": 0,
+          "latency_s": 230.093,
+          "cached_response": 54,
+          "usd": 0.014744
+        },
+        "usd_per_q_amortized": 0.000752,
+        "wall_s": 0.0
+      }
+    }
+  },
+  "54": {
+    "companies": 60,
+    "docs": 540,
+    "chars": 331101,
+    "paths": {
+      "scan": {
+        "n": 63,
+        "accuracy": 1.0,
+        "errors": 0,
+        "per_hop": {
+          "aggregate": 1.0,
+          "cross_year": 1.0,
+          "deep_chain": 1.0,
+          "metric_change": 1.0,
+          "supply_chain": 1.0
+        },
+        "query_usage": {
+          "calls": 63,
+          "prompt": 11125023,
+          "hit": 10927872,
+          "miss": 197151,
+          "completion": 17731,
+          "reasoning": 0,
+          "latency_s": 372.656,
+          "cached_response": 0,
+          "usd": 0.072995
+        },
+        "usd_per_q": 0.001159,
+        "prompt_tokens_per_q": 176588,
+        "cache_hit_rate": 0.9823,
+        "p50_latency_s": 5.41,
+        "wall_s": 103.0
+      },
+      "index": {
+        "n": 63,
+        "accuracy": 0.6984,
+        "errors": 0,
+        "per_hop": {
+          "aggregate": 0.0833,
+          "cross_year": 1.0,
+          "deep_chain": 1.0,
+          "metric_change": 1.0,
+          "supply_chain": 0.0
+        },
+        "query_usage": {
+          "calls": 63,
+          "prompt": 46339,
+          "hit": 3072,
+          "miss": 43267,
+          "completion": 13473,
+          "reasoning": 0,
+          "latency_s": 229.967,
+          "cached_response": 0,
+          "usd": 0.014583
+        },
+        "usd_per_q": 0.000231,
+        "prompt_tokens_per_q": 736,
+        "cache_hit_rate": 0.0663,
+        "p50_latency_s": 3.23,
+        "wall_s": 237.1
+      },
+      "index_join": {
+        "n": 63,
+        "accuracy": 0.8254,
+        "errors": 0,
+        "per_hop": {
+          "aggregate": 0.3333,
+          "cross_year": 1.0,
+          "deep_chain": 1.0,
+          "metric_change": 1.0,
+          "supply_chain": 0.625
+        },
+        "query_usage": {
+          "calls": 126,
+          "prompt": 97314,
+          "hit": 11008,
+          "miss": 86306,
+          "completion": 28768,
+          "reasoning": 0,
+          "latency_s": 491.919,
+          "cached_response": 48,
+          "usd": 0.03024
+        },
+        "usd_per_q": 0.00048,
+        "prompt_tokens_per_q": 1545,
+        "cache_hit_rate": 0.1131,
+        "p50_latency_s": 6.49,
+        "wall_s": 88.6
+      },
+      "view": {
+        "n": 63,
+        "accuracy": 1.0,
+        "errors": 0,
+        "per_hop": {
+          "aggregate": 1.0,
+          "cross_year": 1.0,
+          "deep_chain": 1.0,
+          "metric_change": 1.0,
+          "supply_chain": 1.0
+        },
+        "query_usage": {
+          "calls": 63,
+          "prompt": 442995,
+          "hit": 420608,
+          "miss": 22387,
+          "completion": 13156,
+          "reasoning": 0,
+          "latency_s": 159.362,
+          "cached_response": 0,
+          "usd": 0.012513
+        },
+        "usd_per_q": 0.000199,
+        "prompt_tokens_per_q": 7032,
+        "cache_hit_rate": 0.9495,
+        "p50_latency_s": 2.36,
+        "build_usage": {
+          "calls": 540,
+          "prompt": 256185,
+          "hit": 4608,
+          "miss": 251577,
+          "completion": 188297,
+          "reasoning": 0,
+          "latency_s": 2277.1749999999984,
+          "cached_response": 36,
+          "usd": 0.150729
+        },
+        "usd_per_q_amortized": 0.002591,
+        "wall_s": 312.4
+      },
+      "agent": {
+        "n": 63,
+        "accuracy": 1.0,
+        "errors": 0,
+        "per_hop": {
+          "aggregate": 1.0,
+          "cross_year": 1.0,
+          "deep_chain": 1.0,
+          "metric_change": 1.0,
+          "supply_chain": 1.0
+        },
+        "query_usage": {
+          "calls": 358,
+          "prompt": 1151880,
+          "hit": 804992,
+          "miss": 346888,
+          "completion": 51270,
+          "reasoning": 0,
+          "latency_s": 786.0509999999997,
+          "cached_response": 58,
+          "usd": 0.08521
+        },
+        "usd_per_q": 0.001353,
+        "prompt_tokens_per_q": 18284,
+        "cache_hit_rate": 0.6989,
+        "p50_latency_s": 7.14,
+        "wall_s": 174.5
+      },
+      "view_sql": {
+        "n": 63,
+        "accuracy": 1.0,
+        "errors": 0,
+        "per_hop": {
+          "aggregate": 1.0,
+          "cross_year": 1.0,
+          "deep_chain": 1.0,
+          "metric_change": 1.0,
+          "supply_chain": 1.0
+        },
+        "query_usage": {
+          "calls": 126,
+          "prompt": 50257,
+          "hit": 23424,
+          "miss": 26833,
+          "completion": 48660,
+          "reasoning": 0,
+          "latency_s": 585.6529999999999,
+          "cached_response": 126,
+          "usd": 0.033291
+        },
+        "usd_per_q": 0.000528,
+        "prompt_tokens_per_q": 798,
+        "cache_hit_rate": 0.4661,
+        "p50_latency_s": 8.07,
+        "build_usage": {
+          "calls": 540,
+          "prompt": 256185,
+          "hit": 4608,
+          "miss": 251577,
+          "completion": 188297,
+          "reasoning": 0,
+          "latency_s": 2277.1749999999984,
+          "cached_response": 540,
+          "usd": 0.150729
+        },
+        "usd_per_q_amortized": 0.002921,
+        "wall_s": 0.1
+      }
+    }
+  },
+  "180": {
+    "companies": 186,
+    "docs": 1674,
+    "chars": 1027710,
+    "paths": {
+      "scan": {
+        "n": 63,
+        "accuracy": 0.9524,
+        "errors": 0,
+        "per_hop": {
+          "aggregate": 0.75,
+          "cross_year": 1.0,
+          "deep_chain": 1.0,
+          "metric_change": 1.0,
+          "supply_chain": 1.0
+        },
+        "query_usage": {
+          "calls": 63,
+          "prompt": 34465767,
+          "hit": 33902592,
+          "miss": 563175,
+          "completion": 36985,
+          "reasoning": 0,
+          "latency_s": 550.553,
+          "cached_response": 0,
+          "usd": 0.208375
+        },
+        "usd_per_q": 0.003308,
+        "prompt_tokens_per_q": 547076,
+        "cache_hit_rate": 0.9837,
+        "p50_latency_s": 7.1,
+        "wall_s": 154.7
+      },
+      "index": {
+        "n": 63,
+        "accuracy": 0.6667,
+        "errors": 0,
+        "per_hop": {
+          "aggregate": 0.0,
+          "cross_year": 1.0,
+          "deep_chain": 0.0,
+          "metric_change": 1.0,
+          "supply_chain": 0.0
+        },
+        "query_usage": {
+          "calls": 63,
+          "prompt": 46813,
+          "hit": 7040,
+          "miss": 39773,
+          "completion": 12602,
+          "reasoning": 0,
+          "latency_s": 206.73699999999997,
+          "cached_response": 5,
+          "usd": 0.013548
+        },
+        "usd_per_q": 0.000215,
+        "prompt_tokens_per_q": 743,
+        "cache_hit_rate": 0.1504,
+        "p50_latency_s": 3.19,
+        "wall_s": 574.8
+      },
+      "index_join": {
+        "n": 63,
+        "accuracy": 0.7619,
+        "errors": 0,
+        "per_hop": {
+          "aggregate": 0.0,
+          "cross_year": 1.0,
+          "deep_chain": 1.0,
+          "metric_change": 1.0,
+          "supply_chain": 0.625
+        },
+        "query_usage": {
+          "calls": 126,
+          "prompt": 97498,
+          "hit": 19968,
+          "miss": 77530,
+          "completion": 28929,
+          "reasoning": 0,
+          "latency_s": 445.98800000000006,
+          "cached_response": 52,
+          "usd": 0.029047
+        },
+        "usd_per_q": 0.000461,
+        "prompt_tokens_per_q": 1548,
+        "cache_hit_rate": 0.2048,
+        "p50_latency_s": 6.21,
+        "wall_s": 80.5
+      },
+      "view": {
+        "n": 63,
+        "accuracy": 0.9841,
+        "errors": 0,
+        "per_hop": {
+          "aggregate": 0.9167,
+          "cross_year": 1.0,
+          "deep_chain": 1.0,
+          "metric_change": 1.0,
+          "supply_chain": 1.0
+        },
+        "query_usage": {
+          "calls": 63,
+          "prompt": 1347990,
+          "hit": 1309440,
+          "miss": 38550,
+          "completion": 22991,
+          "reasoning": 0,
+          "latency_s": 240.118,
+          "cached_response": 0,
+          "usd": 0.023505
+        },
+        "usd_per_q": 0.000373,
+        "prompt_tokens_per_q": 21397,
+        "cache_hit_rate": 0.9714,
+        "p50_latency_s": 3.72,
+        "build_usage": {
+          "calls": 1674,
+          "prompt": 794127,
+          "hit": 77952,
+          "miss": 716175,
+          "completion": 587331,
+          "reasoning": 0,
+          "latency_s": 6687.608000000003,
+          "cached_response": 228,
+          "usd": 0.460059
+        },
+        "usd_per_q_amortized": 0.007676,
+        "wall_s": 788.6
+      },
+      "agent": {
+        "n": 63,
+        "accuracy": 0.873,
+        "errors": 0,
+        "per_hop": {
+          "aggregate": 0.3333,
+          "cross_year": 1.0,
+          "deep_chain": 1.0,
+          "metric_change": 1.0,
+          "supply_chain": 1.0
+        },
+        "query_usage": {
+          "calls": 364,
+          "prompt": 1312318,
+          "hit": 892416,
+          "miss": 419902,
+          "completion": 55766,
+          "reasoning": 0,
+          "latency_s": 840.4149999999998,
+          "cached_response": 65,
+          "usd": 0.099122
+        },
+        "usd_per_q": 0.001573,
+        "prompt_tokens_per_q": 20830,
+        "cache_hit_rate": 0.68,
+        "p50_latency_s": 7.45,
+        "wall_s": 190.7
+      },
+      "view_sql": {
+        "n": 63,
+        "accuracy": 1.0,
+        "errors": 0,
+        "per_hop": {
+          "aggregate": 1.0,
+          "cross_year": 1.0,
+          "deep_chain": 1.0,
+          "metric_change": 1.0,
+          "supply_chain": 1.0
+        },
+        "query_usage": {
+          "calls": 126,
+          "prompt": 50643,
+          "hit": 23424,
+          "miss": 27219,
+          "completion": 48317,
+          "reasoning": 0,
+          "latency_s": 557.2299999999999,
+          "cached_response": 126,
+          "usd": 0.033143
+        },
+        "usd_per_q": 0.000526,
+        "prompt_tokens_per_q": 804,
+        "cache_hit_rate": 0.4625,
+        "p50_latency_s": 7.42,
+        "build_usage": {
+          "calls": 1674,
+          "prompt": 794127,
+          "hit": 77952,
+          "miss": 716175,
+          "completion": 587331,
+          "reasoning": 0,
+          "latency_s": 6687.608000000003,
+          "cached_response": 1674,
+          "usd": 0.460059
+        },
+        "usd_per_q_amortized": 0.007829,
+        "wall_s": 0.2
+      }
+    }
+  },
+  "540": {
+    "companies": 546,
+    "docs": 4914,
+    "chars": 3019947,
+    "paths": {
+      "scan": {
+        "infeasible": true,
+        "reason": "corpus ~1612651 tokens > context 1000000"
+      },
+      "index": {
+        "n": 63,
+        "accuracy": 0.6667,
+        "errors": 0,
+        "per_hop": {
+          "aggregate": 0.0,
+          "cross_year": 1.0,
+          "deep_chain": 0.0,
+          "metric_change": 1.0,
+          "supply_chain": 0.0
+        },
+        "query_usage": {
+          "calls": 63,
+          "prompt": 46674,
+          "hit": 7168,
+          "miss": 39506,
+          "completion": 16100,
+          "reasoning": 0,
+          "latency_s": 242.18200000000002,
+          "cached_response": 9,
+          "usd": 0.015607
+        },
+        "usd_per_q": 0.000248,
+        "prompt_tokens_per_q": 741,
+        "cache_hit_rate": 0.1536,
+        "p50_latency_s": 3.28,
+        "wall_s": 1182.6
+      },
+      "index_join": {
+        "n": 63,
+        "accuracy": 0.7302,
+        "errors": 0,
+        "per_hop": {
+          "aggregate": 0.0,
+          "cross_year": 1.0,
+          "deep_chain": 0.0,
+          "metric_change": 1.0,
+          "supply_chain": 0.5
+        },
+        "query_usage": {
+          "calls": 126,
+          "prompt": 96002,
+          "hit": 20864,
+          "miss": 75138,
+          "completion": 38048,
+          "reasoning": 0,
+          "latency_s": 537.3979999999999,
+          "cached_response": 57,
+          "usd": 0.034162
+        },
+        "usd_per_q": 0.000542,
+        "prompt_tokens_per_q": 1524,
+        "cache_hit_rate": 0.2173,
+        "p50_latency_s": 6.45,
+        "wall_s": 91.1
+      },
+      "view": {
+        "n": 63,
+        "accuracy": 0.9206,
+        "errors": 0,
+        "per_hop": {
+          "aggregate": 0.5833,
+          "cross_year": 1.0,
+          "deep_chain": 1.0,
+          "metric_change": 1.0,
+          "supply_chain": 1.0
+        },
+        "query_usage": {
+          "calls": 63,
+          "prompt": 3997644,
+          "hit": 3916544,
+          "miss": 81100,
+          "completion": 40856,
+          "reasoning": 0,
+          "latency_s": 420.6289999999999,
+          "cached_response": 0,
+          "usd": 0.048428
+        },
+        "usd_per_q": 0.000769,
+        "prompt_tokens_per_q": 63455,
+        "cache_hit_rate": 0.9797,
+        "p50_latency_s": 4.72,
+        "build_usage": {
+          "calls": 4914,
+          "prompt": 2332797,
+          "hit": 267008,
+          "miss": 2065789,
+          "completion": 1719767,
+          "reasoning": 0,
+          "latency_s": 20408.43799999996,
+          "cached_response": 600,
+          "usd": 1.34253
+        },
+        "usd_per_q_amortized": 0.022079,
+        "wall_s": 2372.3
+      },
+      "agent": {
+        "n": 63,
+        "accuracy": 0.8413,
+        "errors": 0,
+        "per_hop": {
+          "aggregate": 0.1667,
+          "cross_year": 1.0,
+          "deep_chain": 1.0,
+          "metric_change": 1.0,
+          "supply_chain": 1.0
+        },
+        "query_usage": {
+          "calls": 361,
+          "prompt": 1402641,
+          "hit": 946432,
+          "miss": 456209,
+          "completion": 57962,
+          "reasoning": 0,
+          "latency_s": 952.3769999999997,
+          "cached_response": 57,
+          "usd": 0.106048
+        },
+        "usd_per_q": 0.001683,
+        "prompt_tokens_per_q": 22264,
+        "cache_hit_rate": 0.6747,
+        "p50_latency_s": 7.71,
+        "wall_s": 238.0
+      },
+      "view_sql": {
+        "n": 63,
+        "accuracy": 1.0,
+        "errors": 0,
+        "per_hop": {
+          "aggregate": 1.0,
+          "cross_year": 1.0,
+          "deep_chain": 1.0,
+          "metric_change": 1.0,
+          "supply_chain": 1.0
+        },
+        "query_usage": {
+          "calls": 127,
+          "prompt": 51111,
+          "hit": 23296,
+          "miss": 27815,
+          "completion": 45637,
+          "reasoning": 0,
+          "latency_s": 512.6049999999999,
+          "cached_response": 125,
+          "usd": 0.031624
+        },
+        "usd_per_q": 0.000502,
+        "prompt_tokens_per_q": 811,
+        "cache_hit_rate": 0.4558,
+        "p50_latency_s": 7.13,
+        "build_usage": {
+          "calls": 4914,
+          "prompt": 2332797,
+          "hit": 267008,
+          "miss": 2065789,
+          "completion": 1719767,
+          "reasoning": 0,
+          "latency_s": 20408.43799999996,
+          "cached_response": 4914,
+          "usd": 1.34253
+        },
+        "usd_per_q_amortized": 0.021812,
+        "wall_s": 8.6
+      }
+    }
+  }
+}

@@ -1,187 +1,372 @@
 # 这个项目的证据化清单：每项内容都指向仓库里的证据。校验：profile-atlas check .
 schema: portfolio/project@1
 id: langgraph-agentic-workflow
-title: 金融多跳问答 Agentic RAG
-title_en: Agentic RAG for multi-hop financial QA
+title: 多跳问答的证据访问路径：长上下文、RAG、物化视图与 Agent 的分界点
+title_en: 'Access paths for multi-hop QA: long context vs RAG vs views'
 kind: personal
 role: solo
-period: {start: "2026-05", end: "2026-06"}
+period:
+  start: 2026-05
+  end: 2026-11
 visibility: public
-
-summary: 面向金融年报研报的可自纠错、可评测、可后训练的本地 Agentic RAG 系统
-problem: >-
-  金融问答要在多份长文档之间多跳推理（跨年度、跨上下游主体）。单路检索对“公司加年份”这类实体加数字查询召回不全，
-  多跳证据很难同时命中；生成容易幻觉且不引用证据；也缺少能闭环到训练的评测。
-
+status: done
+summary: 实测前缀缓存时代长上下文、RAG、物化视图与 Agent 在多跳问答上的准确率、成本和分界点，并据此做覆盖感知的路径规划
+problem: 多跳问答默认用 RAG，但百万级上下文加上前缀缓存（读价约为输入的 1/50）之后，“RAG 便宜、长上下文准”是否还成立、在哪个规模翻转， 没有人在同一组题上量过；先抽成表再查的物化视图便宜，却只能回答表结构预想到的问题，系统也不知道什么时候该放弃它。
+questions:
+- 语料从 3 万字涨到 300 万字时，各条访问路径的准确率、每题成本、延迟怎么变，分界点在哪？
+- RAG 在多跳题上失败，是排序的问题还是连接的问题？
+- 物化视图答不了表结构以外的问题时，规划器能不能事先知道并改走别的路径，代价是多少？
 techs:
-  - slug: retrieval-augmented-generation
-    depth: core
-  - slug: dense-retrieval
-    depth: used
-    note: FAISS + bge-base-zh
-  - slug: bm25
-    depth: used
-    note: jieba 分词
-  - slug: reciprocal-rank-fusion
-    depth: core
-    note: 稠密与稀疏结果按排名融合
-  - slug: cross-encoder-reranking
-    depth: used
-    note: 消融里证明它在多跳上有害
-  - slug: self-rag
-    depth: used
-    note: 检索评分加生成评分的自纠错闭环
-  - slug: llm-as-a-judge
-    depth: used
-  - slug: langgraph
-    depth: core
-  - slug: lora
-    depth: used
-  - slug: group-relative-policy-optimization
-    depth: used
-  - slug: vllm
-    depth: used
-
+- slug: retrieval-augmented-generation
+  depth: core
+- slug: long-context
+  depth: core
+- slug: prompt-caching
+  depth: core
+  note: 前缀缓存价格作为成本变量
+  proposed:
+    name: Prompt Caching
+    name_zh: 提示前缀缓存
+    kind: method
+- slug: multi-hop-question-answering
+  depth: core
+  proposed:
+    name: Multi-hop Question Answering
+    name_zh: 多跳问答
+    kind: application
+- slug: text-to-sql
+  depth: used
+  note: 在模型自建的事实表上写 SQL
+  proposed:
+    name: Text-to-SQL
+    name_zh: 文本转 SQL
+    kind: application
+- slug: agentic-search
+  depth: used
+  note: search / read 工具循环
+  proposed:
+    name: Agentic Search
+    name_zh: 智能体搜索
+    kind: method
+- slug: tool-use
+  depth: used
+- slug: bm25
+  depth: used
+  note: jieba 分词
+- slug: dense-retrieval
+  depth: used
+  note: FAISS + bge-base-zh
+- slug: reciprocal-rank-fusion
+  depth: used
+- slug: cross-encoder-reranking
+  depth: touched
+  note: 早期版本的消融里证明它在多跳上有害
+- slug: langgraph
+  depth: touched
+  note: 早期版本的自纠错图
+- slug: self-rag
+  depth: touched
 contributions:
-  - what: 用 RRF 融合 FAISS 稠密检索和 BM25 稀疏检索，替换 LangGraph 基线里的单路向量库
-    why: 多跳问题的两跳证据分别靠语义和年份、实体 token 命中，单路检索总会漏一跳
-    techs: [reciprocal-rank-fusion, dense-retrieval, bm25, langgraph]
-    evidence: [rrf-code, hybrid-code]
-  - what: 搭建 route、retrieve、grade_documents、generate、grade_generation 自纠错图
-    why: 对幻觉和答非所问分别回退到重生成或补检索
-    techs: [langgraph, self-rag, llm-as-a-judge]
-    evidence: [graph-code]
-  - what: 按结构化 facts 精确计算答案来合成 51 条可追溯的多跳 QA
-    why: 用 LLM 生成标准答案会把幻觉带进评测集，检索和引用指标就不可信了
-    techs: [retrieval-augmented-generation]
-    evidence: [qa-readme, results]
-  - what: GRPO 奖励直接复用评测指标（正确性、引用、格式、无幻觉）
-    why: 让评测和训练用同一把尺子，评测发现的问题能直接变成训练信号
-    techs: [group-relative-policy-optimization]
-    evidence: [rewards-code]
-
+- what: 在同一组多跳题、四档语料规模（最多约 300 万字）上对比七条证据访问路径：全文、混合检索、检索加显式连接、模型读表、模型写 SQL、按需物化、工具 Agent
+  why: 前缀缓存改变了长上下文的成本，需要在同一组题上重新量各条路径的准确率、成本和延迟
+  techs:
+  - long-context
+  - retrieval-augmented-generation
+  - prompt-caching
+  - agentic-search
+  evidence:
+  - paths-code
+  - base-180-scan
+  - base-180-index
+- what: 构造 52 道答案在语料里但不在视图表结构里的题，测物化视图在表外问题上怎么失败
+  why: 视图的表结构总是照着已知问题设计的，只测已知问题会高估视图
+  techs:
+  - multi-hop-question-answering
+  evidence:
+  - oos-questions-code
+  - oos-540-agent
+- what: 做了一个按题型和表结构覆盖判断选路径的规划器，按记录重放，和单一路径、答 null 再升级、事后最优对比
+  why: 把各条路径的分界点变成可执行的规则，并量出事先判断覆盖相对升级策略省多少钱
+  techs:
+  - text-to-sql
+  - retrieval-augmented-generation
+  evidence:
+  - planner-code
+  - planner-180-coverage
+  - planner-180-escalate
+- what: 实现按需物化：用现有事实表选出需要新字段的行，只对这些行的文档抽取，再用 SQL 作答
+  why: 语料放不进上下文时，表外的行业聚合题 Agent 翻不完、视图又没有这一列
+  techs:
+  - text-to-sql
+  evidence:
+  - paths-code
+  - oos-540-lazy
+  - planner-540-lazy
 decisions:
-  - choice: 用 RRF 按排名融合，而不是按分数加权
-    why: 余弦相似度和 BM25 分数量纲完全不同，按排名融合不需要调权重也不需要归一化
-    alternatives: [分数线性加权, 只用稠密检索]
-    evidence: [rrf-code]
-  - choice: 有元数据过滤时先扩大初检广度再过滤
-    why: 小 topk 先检索再过滤，会把符合条件的相关文档提前丢掉
-    alternatives: [先检索 topk 再过滤]
-    evidence: [filter-code]
-
+- choice: 换模型后整张表重跑，旧模型的结果单独保留，不混在一张表里
+  why: 这台设备只能用 deepseek-v4.1-flash，混用两个模型版本的格子无法比较；旧结果用来核对结论是否依赖模型版本
+  alternatives:
+  - 只补缺的格子
+  evidence:
+  - base-180-index
+- choice: 定位成实证研究加成本模型，不以新系统为卖点
+  why: 语义算子、文档查询规划、RAG 与长上下文路由都已有大量系统工作，本项目的增量在实测的分界点、成本和失败模式
+  alternatives:
+  - 包装成新的规划器系统
+  evidence:
+  - readme-related
+- choice: 物化视图用 SQL 查，而不是让模型读表
+  why: 模型读 1,638 行的表做聚合会数错，而且每次运行结果不同
+  alternatives:
+  - 模型直接读表
+  evidence:
+  - stability-540
+  - view-sql-iterations
 findings:
-  - claim: 稠密单路在多跳全链命中上是 0：跨年财务表语义高度相似，两跳证据无法同时召回，靠 BM25 的年份和实体 token 互补
-    kind: insight
-    evidence: [results]
-  - claim: 朴素 cross-encoder 重排在多跳上反而有害，会把间接相关的第二跳证据挤出 top-k
-    kind: negative
-    evidence: [results]
-  - claim: vLLM 的 guided decoding（xgrammar）会让 execute_model 崩溃，改成 prompt 约束加容错解析
-    kind: pitfall
-    evidence: [pitfall-code]
-
+- claim: 前缀缓存命中 98% 时，55 万 token 全文问答每题约 $0.0033，长上下文剩下的代价主要是延迟和窗口上限
+  kind: insight
+  evidence:
+  - base-180-scan
+- claim: RAG 在供应链题上所有规模都是 0 分，原因是连接键不在问题里而不是排序；显式连接在有干扰时只修到 0.62
+  kind: negative
+  evidence:
+  - base-180-index
+  - base-54-index-join
+- claim: 540 家干扰时模型读事实表做聚合 4 次运行平均 0.5833，同一张表写 SQL 4 次都是 1.0
+  kind: insight
+  evidence:
+  - stability-540
+- claim: 模型写 SQL 的失败来自自由文本取值对不上，补上示例行、外键和取值目录后才稳定
+  kind: pitfall
+  evidence:
+  - view-sql-iterations
+- claim: 事先判断覆盖和答 null 再升级准确率相同，但升级每题贵约 46%，因为视图在缺列时会先长时间推理
+  kind: insight
+  evidence:
+  - planner-180-coverage
+  - planner-180-escalate
+- claim: temperature 0 不确定：同一道聚合题重复 4 次，全文问答的平均准确率只有 0.8542，单次在 0.75 到 0.92 之间
+  kind: pitfall
+  evidence:
+  - stability-180
+  - stability-code
+- claim: 自己的实现坑：带缓存的客户端里原样重试会命中缓存、等于没重试；选行的结果被展示用的 50 行上限截断
+  kind: pitfall
+  evidence:
+  - retry-cap-code
+  - readme-lazy-pitfall
+- claim: 朴素 cross-encoder 重排在多跳上反而有害，会把间接相关的第二跳证据挤出 top-k
+  kind: negative
+  evidence:
+  - results
 metrics:
-  - name: Recall@5
-    value: 0.569
-    baseline: {value: 0.441, label: 稠密单路（FAISS）}
-    setting: 51 条合成多跳 QA，bge-base-zh
-    scale: pilot
-    evidence: [results-hybrid, results-dense]
-  - name: 多跳全链 Hit@5
+- name: 视图问答准确率（SQL 查表）
+  value: 1.0
+  baseline:
+    value: 0.921
+    label: 模型直接读表
+  setting: 540 家干扰公司、约 300 万字语料、63 道多跳题，deepseek-v4.1-flash
+  scale: pilot
+  evidence:
+  - base-540-view-sql
+  - base-540-view
+- name: 全文问答每题成本（美元）
+  value: 0.00331
+  baseline:
+    value: 0.00021
+    label: 混合检索 top-8
+  setting: 180 家干扰公司、547076 prompt token、前缀缓存命中 0.98，按 deepseek-v4-flash 列表价
+  scale: pilot
+  evidence:
+  - base-180-scan
+  - base-180-index
+- name: 规划器每题查询成本（美元）
+  value: 0.00079
+  baseline:
+    value: 0.00265
+    label: 全部走全文
+  setting: 180 家干扰公司、115 题（含 52 道表外题），准确率 0.965 对 0.974，不含建表成本
+  scale: pilot
+  evidence:
+  - planner-180-coverage
+  - planner-180-scan
+- name: 规划器准确率（语料放不进上下文）
+  value: 0.939
+  baseline:
+    value: 0.87
+    label: 全部走 Agent
+  setting: 540 家干扰公司、115 题，覆盖判断加按需物化
+  scale: pilot
+  evidence:
+  - planner-540-lazy
+  - planner-540-agent
+- name: 表结构覆盖判断准确率
+  value: 1.0
+  setting: 127 个不同问题文本（75 个被覆盖、52 个未覆盖），一次 LLM 调用
+  scale: pilot
+  evidence:
+  - planner-classifier
+- name: Recall@5
+  value: 0.569
+  baseline:
+    value: 0.441
+    label: 稠密单路（FAISS）
+  setting: 早期版本，51 条合成多跳 QA，bge-base-zh
+  scale: pilot
+  evidence:
+  - results-hybrid
+  - results-dense
+- name: 重排后多跳全链 Hit@5
+  value: 0.078
+  baseline:
     value: 0.255
-    baseline: {value: 0.0, label: 稠密单路}
-    setting: 51 条合成多跳 QA，完整证据链都进 top-5 才算命中
-    scale: pilot
-    evidence: [results-hybrid, results-dense]
-  - name: 重排后 Hit@5
-    value: 0.078
-    baseline: {value: 0.255, label: 不重排的 RRF}
-    setting: bge-reranker-base，同一 51 条 QA
-    scale: pilot
-    evidence: [results-reranker, results-hybrid]
-  - name: 端到端答案准确率
-    value: 0.68
-    setting: Qwen2.5-7B-Instruct on vLLM，n=10
-    scale: smoke
-    evidence: [results-e2e]
-  - name: LoRA SFT 答案准确率
-    value: 0.900
-    baseline: {value: 0.825, label: SFT 前}
-    setting: Qwen2.5-0.5B，in-domain
-    scale: smoke
-    evidence: [sft-readme]
-  - name: vLLM 吞吐 QPS@16
-    value: 7.16
-    setting: A100 单卡，Qwen2.5-7B-Instruct
-    scale: pilot
-    evidence: [serve-readme]
-
+    label: 不重排的 RRF
+  setting: 早期版本，bge-reranker-base，同一 51 条 QA
+  scale: pilot
+  evidence:
+  - results-reranker
+  - results-hybrid
 evidence:
-  - id: rrf-code
-    type: file
-    path: src/agentic_rag/retrieval/base.py
-    quote:
-      - "def rrf_fuse("
-      - "Rank-based, so the very different score scales of dense (cosine) and BM25 (tf-idf) combine cleanly."
-  - id: hybrid-code
-    type: file
-    path: src/agentic_rag/retrieval/hybrid.py
-    quote: ["fused = rrf_fuse([dense_hits, bm25_hits], k=s.rrf_k)"]
-  - id: filter-code
-    type: file
-    path: src/agentic_rag/retrieval/hybrid.py
-    quote: ["When a metadata filter is active, probe wider so filtering does not discard"]
-  - id: rewards-code
-    type: file
-    path: training/rewards.py
-    quote:
-      - "reuse the P4 evaluation signals as rewards"
-      - "ALL_REWARDS = [reward_answer_correctness, reward_citation, reward_format, reward_no_hallucination]"
-  - id: graph-code
-    type: file
-    path: src/agentic_rag/graph/build.py
-    quote:
-      - "wf.add_conditional_edges( \"generate\", partial(grade_generation_v_documents_and_question, ctx=ctx),"
-      - "{\"__end__\": END, \"generate\": \"generate\", \"web_search_node\": \"web_search_node\"},"
-  - id: qa-readme
-    type: file
-    path: README.md
-    quote: ["答案由结构化 facts **精确计算**（非 LLM 生成，保证 ground truth）"]
-  - id: results
-    type: file
-    path: docs/results.md
-    quote: ["a naive cross-encoder reranker *hurts* multi-hop retrieval here"]
-  - id: results-dense
-    type: file
-    path: docs/results.md
-    quote: ["| Dense (FAISS · bge-zh) | 0.4412 | 0.6569 | 0.4530 | 0.3386 | 0.0000 |"]
-  - id: results-hybrid
-    type: file
-    path: docs/results.md
-    quote: ["| Hybrid (RRF) | 0.5686 | 0.7843 | 0.5957 | 0.4689 | 0.2549 |"]
-  - id: results-reranker
-    type: file
-    path: docs/results.md
-    quote: ["| Hybrid + Reranker (bge-reranker-base) | 0.3039 | 0.7451 | 0.2621 | 0.1984 | 0.0784 |"]
-  - id: results-e2e
-    type: file
-    path: docs/results.md
-    quote: ["| 10 | 0.6800 | 0.9500 | 1.2000 | 6.8670 | 0.7000 | 0.8000 |"]
-  - id: sft-readme
-    type: file
-    path: README.md
-    quote: ["in-domain 答案准确率 **0.825 → 0.900（+7.5pct）**"]
-  - id: serve-readme
-    type: file
-    path: README.md
-    quote: ["吞吐 **QPS@16 = 7.16**"]
-  - id: pitfall-code
-    type: file
-    path: src/agentic_rag/llm.py
-    quote:
-      - "vLLM 0.6.6 guided-decoding (xgrammar) for response_format is unstable and can crash"
-      - "def parse_json(content: str) -> dict:"
-
+- id: paths-code
+  type: file
+  path: src/agentic_rag/access/paths.py
+  quote:
+  - 'class ViewSQLPath(ViewPath):'
+  - 'class LazyViewPath(ViewSQLPath):'
+  - 'class IndexJoinPath(IndexPath):'
+- id: planner-code
+  type: file
+  path: src/agentic_rag/access/planner.py
+  quote:
+  - covered = bool(fields) and all(f in SCHEMA_FIELDS for f in fields)
+  - 'def p_coverage_lazy(c, fits):'
+- id: oos-questions-code
+  type: file
+  path: src/agentic_rag/access/questions.py
+  quote:
+  - 'def build_oos_questions(sw: ScaledWorld) -> list[Question]:'
+- id: stability-code
+  type: file
+  path: src/agentic_rag/access/stability.py
+  quote:
+  - temperature 0 is not deterministic on the
+- id: base-540-view
+  type: file
+  path: docs/metrics/access_paths_deepseek-v4.1-flash.md
+  quote:
+  - '| 540 | 546 | 3019947 | view | 0.921 | 1.00 | 1.00 | 1.00 | 1.00 | 0.58 | 63455 | 0.98 | 0.00077 | 0.02208 | 4.72 |'
+- id: base-540-view-sql
+  type: file
+  path: docs/metrics/access_paths_deepseek-v4.1-flash.md
+  quote:
+  - '| 540 | 546 | 3019947 | view_sql | 1.000 | 1.00 | 1.00 | 1.00 | 1.00 | 1.00 | 811 | 0.46 | 0.00050 | 0.02181 | 7.13 |'
+- id: base-180-scan
+  type: file
+  path: docs/metrics/access_paths_deepseek-v4.1-flash.md
+  quote:
+  - '| 180 | 186 | 1027710 | scan | 0.952 | 1.00 | 1.00 | 1.00 | 1.00 | 0.75 | 547076 | 0.98 | 0.00331 | 0.00331 | 7.1 |'
+- id: base-180-index
+  type: file
+  path: docs/metrics/access_paths_deepseek-v4.1-flash.md
+  quote:
+  - '| 180 | 186 | 1027710 | index | 0.667 | 1.00 | 1.00 | 0.00 | 0.00 | 0.00 | 743 | 0.15 | 0.00021 | 0.00021 | 3.19 |'
+- id: base-54-index-join
+  type: file
+  path: docs/metrics/access_paths_deepseek-v4.1-flash.md
+  quote:
+  - '| 54 | 60 | 331101 | index_join | 0.825 | 1.00 | 1.00 | 0.62 | 1.00 | 0.33 | 1545 | 0.11 | 0.00048 | 0.00048 | 6.49 |'
+- id: oos-540-lazy
+  type: file
+  path: docs/metrics/access_paths_deepseek-v4.1-flash-oos.md
+  quote:
+  - '| 540 | 546 | 3019947 | view_lazy | 0.900 | - | - | - | 0.75 | 1.00 | 56880 | 0.21 | 0.01423 | 0.14848 | 385.5 |'
+- id: oos-540-agent
+  type: file
+  path: docs/metrics/access_paths_deepseek-v4.1-flash-oos.md
+  quote:
+  - '| 540 | 546 | 3019947 | agent | 0.904 | 1.00 | 1.00 | 1.00 | 1.00 | 0.17 | 15192 | 0.67 | 0.00115 | 0.00115 | 5.69 |'
+- id: planner-classifier
+  type: file
+  path: docs/metrics/planner_deepseek-v4.1-flash_base+oos.md
+  quote:
+  - '| original | 127 | 1.000 | 1.000 | covered->covered: 75, uncovered->uncovered: 52 | 0.000338 |'
+- id: planner-180-scan
+  type: file
+  path: docs/metrics/planner_deepseek-v4.1-flash_base+oos.md
+  quote:
+  - '| single: scan | 0.974 | 0.75 | 1.00 | 1.00 | 1.00 | 1.00 | 1.00 | 1.00 | 1.00 | 1.00 | 1.00 | 0.00265 | 0.00265 | 0.00265 | 0.00265 | 8.28 | 7.0 |  |'
+- id: planner-180-coverage
+  type: file
+  path: docs/metrics/planner_deepseek-v4.1-flash_base+oos.md
+  quote:
+  - '| planner: coverage@original | 0.965 | 1.00 | 1.00 | 1.00 | 1.00 | 1.00 | 1.00 | 0.78 | 1.00 | 1.00 | 1.00 | 0.00079 | 0.00479 | 0.00125 | 0.00084 | 10.91 | 7.93 | scan 10, index 84, view_sql 21 |'
+- id: planner-180-escalate
+  type: file
+  path: docs/metrics/planner_deepseek-v4.1-flash_base+oos.md
+  quote:
+  - '| planner: sql_escalate@original | 0.965 | 1.00 | 1.00 | 1.00 | 1.00 | 1.00 | 1.00 | 0.78 | 1.00 | 1.00 | 1.00 | 0.00116 | 0.00516 | 0.00162 | 0.00120 | 15.86 | 7.93 | scan 10, index 84, view_sql 31
+    |'
+- id: planner-540-agent
+  type: file
+  path: docs/metrics/planner_deepseek-v4.1-flash_base+oos.md
+  quote:
+  - '| single: agent | 0.870 | 0.17 | 1.00 | 1.00 | 1.00 | 0.17 | 1.00 | 1.00 | 1.00 | 1.00 | 1.00 | 0.00144 | 0.00144 | 0.00144 | 0.00144 | 13.0 | 6.79 |  |'
+- id: planner-540-lazy
+  type: file
+  path: docs/metrics/planner_deepseek-v4.1-flash_base+oos.md
+  quote:
+  - '| planner: coverage_lazy@original | 0.939 | 1.00 | 1.00 | 1.00 | 1.00 | 1.00 | 0.75 | 0.72 | 0.83 | 1.00 | 1.00 | 0.00181 | 0.01349 | 0.00315 | 0.00194 | 32.92 | 8.05 | index 84, view_sql 21, view_lazy
+    10 |'
+- id: view-sql-iterations
+  type: file
+  path: docs/metrics/view_sql_iterations.md
+  quote:
+  - '**schema-normalization'
+- id: stability-540
+  type: file
+  path: docs/metrics/stability_deepseek-v4.1-flash_540_aggregate.json
+  quote:
+  - '"accuracy_mean": 0.5833'
+- id: stability-180
+  type: file
+  path: docs/metrics/stability_deepseek-v4.1-flash_180_aggregate.json
+  quote:
+  - '"accuracy_mean": 0.8542'
+- id: retry-cap-code
+  type: file
+  path: src/agentic_rag/access/paths.py
+  quote:
+  - an identical retry would return the same empty reply
+  - row selection must see every matching row, not the 50 shown to the model
+- id: readme-lazy-pitfall
+  type: file
+  path: README.md
+  quote:
+  - 重试请求和第一次一模一样，被响应缓存直接返回了同样的空回复
+- id: readme-related
+  type: file
+  path: README.md
+  quote:
+  - '| DocSage（2603.11798） |'
+- id: results
+  type: file
+  path: docs/results.md
+  quote:
+  - a naive cross-encoder reranker *hurts* multi-hop retrieval here
+- id: results-dense
+  type: file
+  path: docs/results.md
+  quote:
+  - '| Dense (FAISS · bge-zh) | 0.4412 | 0.6569 | 0.4530 | 0.3386 | 0.0000 |'
+- id: results-hybrid
+  type: file
+  path: docs/results.md
+  quote:
+  - '| Hybrid (RRF) | 0.5686 | 0.7843 | 0.5957 | 0.4689 | 0.2549 |'
+- id: results-reranker
+  type: file
+  path: docs/results.md
+  quote:
+  - '| Hybrid + Reranker (bge-reranker-base) | 0.3039 | 0.7451 | 0.2621 | 0.1984 | 0.0784 |'
 links:
   repo: https://github.com/cowdedroyal-lab/langgraph-agentic-workflow

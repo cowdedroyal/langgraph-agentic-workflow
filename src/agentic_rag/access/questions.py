@@ -115,3 +115,74 @@ def build_questions(sw: ScaledWorld) -> list[Question]:
             f"在语料中所有主营{s}的公司里，2023年营业收入超过{thr}亿元的有几家？",
             "count", cnt, str(cnt), [(t, 2023) for t in members]))
     return qs
+
+
+# --------------------------------------------------------------------------- beyond the view's schema
+# Questions whose answer is in the corpus but NOT in the fact table the view extracts
+# (company, year, sector, revenue, net_profit, gross_margin, suppliers, customers).
+# They test whether a planner knows when a materialized view cannot answer: the view schema
+# was designed from the base question set, which is the usual way a view is designed.
+OOS_HOPS = ("oos_lookup", "oos_report", "oos_prior", "oos_join", "oos_aggregate")
+OOS_METRIC = {"rd_expense": ("研发费用", "亿元"), "debt_ratio": ("资产负债率", "%"),
+              "ocf": ("经营活动现金流量净额", "亿元")}
+
+
+def build_oos_questions(sw: ScaledWorld) -> list[Question]:
+    from ..ingestion.synthetic import _BROKERS, compute_financials
+
+    w = sw.world
+    bt = w.by_ticker()
+    core = [p.ticker for p in COMPANIES]
+    fins = {p.ticker: compute_financials(p) for p in w.companies}
+    qs: list[Question] = []
+
+    # oos_lookup: annual-report-only metrics of a named company (2023)
+    for t in core:
+        n = bt[t].name
+        for m, (zh, unit) in OOS_METRIC.items():
+            v = fins[t][2023][m]
+            tol = 0.06 if unit == "%" else max(0.06, abs(v) * 0.01)
+            qs.append(Question(f"ol-{t}-{m}", "oos_lookup", f"{n}2023年的{zh}是多少{unit}？",
+                               "number", v, f"{v}{unit}", [(t, 2023)], tolerance=tol))
+
+    # oos_report: fields only in the research report (2023 report)
+    for t in core:
+        p = bt[t]
+        f = fins[t][2023]
+        rating = "买入" if p.rev_growth > 0.2 else "增持"
+        target = round(f["revenue"] * (0.6 if p.chain == "白酒链" else 0.3), 1)
+        broker = _BROKERS[(int(p.ticker) + 2023) % len(_BROKERS)]
+        qs.append(Question(f"or-{t}-rating", "oos_report", f"券商对{p.name}2023年报点评给出的投资评级是什么？",
+                           "entity", rating, rating, [(t, 2023)]))
+        qs.append(Question(f"or-{t}-target", "oos_report", f"券商对{p.name}2023年报点评给出的目标价是多少元？",
+                           "number", target, f"{target}元", [(t, 2023)], tolerance=0.06))
+        qs.append(Question(f"or-{t}-broker", "oos_report", f"{p.name}2023年报点评研报是哪家券商出具的？",
+                           "entity", broker, broker, [(t, 2023)]))
+
+    # oos_prior: 2020 figures only appear as the prior-year column of 2021 documents
+    for t in core:
+        v = fins[t][2020]["revenue"]
+        qs.append(Question(f"op-{t}-revenue2020", "oos_prior", f"{bt[t].name}2020年的营业收入是多少亿元？",
+                           "number", v, f"{v}亿元", [(t, 2021)], tolerance=max(0.06, v * 0.01)))
+
+    # oos_join: join key is in the schema (supplier), the fetched attribute is not
+    for t in core:
+        for sup, mat in w.suppliers_of(t):
+            if sup not in core:
+                continue
+            v = fins[sup][2023]["debt_ratio"]
+            qs.append(Question(f"oj-{t}-{sup}-debt", "oos_join",
+                               f"{bt[t].name}的{mat}供应商在2023年的资产负债率是多少%？",
+                               "number", v, f"{bt[sup].name} {v}%", [(t, 2023), (sup, 2023)], tolerance=0.06))
+
+    # oos_aggregate: sector-wide ranking on an attribute outside the schema
+    for s in sorted({bt[t].sector for t in core}):
+        members = [p.ticker for p in w.companies if p.sector == s]
+        vals = sorted(((fins[m][2023]["rd_expense"], m) for m in members), reverse=True)
+        assert len(vals) < 2 or vals[0][0] != vals[1][0], f"tie for max rd_expense in {s}"
+        best = vals[0][1]
+        qs.append(Question(f"oa-max-rd-{s}", "oos_aggregate",
+                           f"在语料中所有主营{s}的公司里，2023年研发费用最高的是哪家公司？",
+                           "entity", bt[best].name, f"{bt[best].name} {vals[0][0]}亿元",
+                           [(m, 2023) for m in members]))
+    return qs

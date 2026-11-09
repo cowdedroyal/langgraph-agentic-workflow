@@ -1,0 +1,602 @@
+{
+  "model": "deepseek-v4.1-flash",
+  "size": 180,
+  "hop": "aggregate",
+  "repeats_extra": 3,
+  "paths": {
+    "view_sql": {
+      "runs": 4,
+      "accuracy_per_run": [
+        1.0,
+        0.9167,
+        1.0,
+        1.0
+      ],
+      "accuracy_mean": 0.9792,
+      "accuracy_min": 0.9167,
+      "accuracy_max": 1.0,
+      "questions_always_right": 11,
+      "questions_flaky": 1,
+      "questions_always_wrong": 0,
+      "extra_usd": 0.02219,
+      "per_question": {
+        "ag-max-农产品": {
+          "gold": "永北农业",
+          "answers": [
+            "永北农业",
+            null,
+            "永北农业",
+            "永北农业"
+          ],
+          "correct": [
+            true,
+            false,
+            true,
+            true
+          ]
+        },
+        "ag-cnt-农产品": {
+          "gold": 16,
+          "answers": [
+            16,
+            16,
+            16,
+            16
+          ],
+          "correct": [
+            true,
+            true,
+            true,
+            true
+          ]
+        },
+        "ag-max-动力电池": {
+          "gold": "安润储能",
+          "answers": [
+            "安润储能",
+            "安润储能",
+            "安润储能",
+            "安润储能"
+          ],
+          "correct": [
+            true,
+            true,
+            true,
+            true
+          ]
+        },
+        "ag-cnt-动力电池": {
+          "gold": 15,
+          "answers": [
+            15,
+            15,
+            15,
+            15
+          ],
+          "correct": [
+            true,
+            true,
+            true,
+            true
+          ]
+        },
+        "ag-max-包装材料": {
+          "gold": "华新印务",
+          "answers": [
+            "华新印务",
+            "华新印务",
+            "华新印务",
+            "华新印务"
+          ],
+          "correct": [
+            true,
+            true,
+            true,
+            true
+          ]
+        },
+        "ag-cnt-包装材料": {
+          "gold": 15,
+          "answers": [
+            15,
+            15,
+            15,
+            15
+          ],
+          "correct": [
+            true,
+            true,
+            true,
+            true
+          ]
+        },
+        "ag-max-正极材料": {
+          "gold": "瑞中材料",
+          "answers": [
+            "瑞中材料",
+            "瑞中材料",
+            "瑞中材料",
+            "瑞中材料"
+          ],
+          "correct": [
+            true,
+            true,
+            true,
+            true
+          ]
+        },
+        "ag-cnt-正极材料": {
+          "gold": 17,
+          "answers": [
+            17,
+            17,
+            17,
+            17
+          ],
+          "correct": [
+            true,
+            true,
+            true,
+            true
+          ]
+        },
+        "ag-max-白酒": {
+          "gold": "鑫康酒厂",
+          "answers": [
+            "鑫康酒厂",
+            "鑫康酒厂",
+            "鑫康酒厂",
+            "鑫康酒厂"
+          ],
+          "correct": [
+            true,
+            true,
+            true,
+            true
+          ]
+        },
+        "ag-cnt-白酒": {
+          "gold": 15,
+          "answers": [
+            15,
+            15,
+            15,
+            15
+          ],
+          "correct": [
+            true,
+            true,
+            true,
+            true
+          ]
+        },
+        "ag-max-锂矿": {
+          "gold": "金鼎资源",
+          "answers": [
+            "金鼎资源",
+            "金鼎资源",
+            "金鼎资源",
+            "金鼎资源"
+          ],
+          "correct": [
+            true,
+            true,
+            true,
+            true
+          ]
+        },
+        "ag-cnt-锂矿": {
+          "gold": 16,
+          "answers": [
+            16,
+            16,
+            16,
+            16
+          ],
+          "correct": [
+            true,
+            true,
+            true,
+            true
+          ]
+        }
+      }
+    },
+    "scan": {
+      "runs": 4,
+      "accuracy_per_run": [
+        0.75,
+        0.9167,
+        0.8333,
+        0.9167
+      ],
+      "accuracy_mean": 0.8542,
+      "accuracy_min": 0.75,
+      "accuracy_max": 0.9167,
+      "questions_always_right": 7,
+      "questions_flaky": 5,
+      "questions_always_wrong": 0,
+      "extra_usd": 0.10637,
+      "per_question": {
+        "ag-max-农产品": {
+          "gold": "永北农业",
+          "answers": [
+            "永北农业",
+            "永北农业",
+            "永北农业",
+            "永北农业"
+          ],
+          "correct": [
+            true,
+            true,
+            true,
+            true
+          ]
+        },
+        "ag-cnt-农产品": {
+          "gold": 16,
+          "answers": [
+            16,
+            16,
+            16,
+            15
+          ],
+          "correct": [
+            true,
+            true,
+            true,
+            false
+          ]
+        },
+        "ag-max-动力电池": {
+          "gold": "安润储能",
+          "answers": [
+            "安润储能",
+            "安润储能",
+            "安润储能",
+            "安润储能"
+          ],
+          "correct": [
+            true,
+            true,
+            true,
+            true
+          ]
+        },
+        "ag-cnt-动力电池": {
+          "gold": 15,
+          "answers": [
+            null,
+            15,
+            13,
+            15
+          ],
+          "correct": [
+            false,
+            true,
+            false,
+            true
+          ]
+        },
+        "ag-max-包装材料": {
+          "gold": "华新印务",
+          "answers": [
+            "华新印务",
+            "华新印务",
+            "华新印务",
+            "华新印务"
+          ],
+          "correct": [
+            true,
+            true,
+            true,
+            true
+          ]
+        },
+        "ag-cnt-包装材料": {
+          "gold": 15,
+          "answers": [
+            15,
+            15,
+            15,
+            15
+          ],
+          "correct": [
+            true,
+            true,
+            true,
+            true
+          ]
+        },
+        "ag-max-正极材料": {
+          "gold": "瑞中材料",
+          "answers": [
+            "瑞中材料",
+            "瑞中材料",
+            "瑞中材料",
+            "瑞中材料"
+          ],
+          "correct": [
+            true,
+            true,
+            true,
+            true
+          ]
+        },
+        "ag-cnt-正极材料": {
+          "gold": 17,
+          "answers": [
+            16,
+            17,
+            null,
+            17
+          ],
+          "correct": [
+            false,
+            true,
+            false,
+            true
+          ]
+        },
+        "ag-max-白酒": {
+          "gold": "鑫康酒厂",
+          "answers": [
+            "鑫康酒厂",
+            "鑫康酒厂",
+            "鑫康酒厂",
+            "鑫康酒厂"
+          ],
+          "correct": [
+            true,
+            true,
+            true,
+            true
+          ]
+        },
+        "ag-cnt-白酒": {
+          "gold": 15,
+          "answers": [
+            null,
+            15,
+            15,
+            15
+          ],
+          "correct": [
+            false,
+            true,
+            true,
+            true
+          ]
+        },
+        "ag-max-锂矿": {
+          "gold": "金鼎资源",
+          "answers": [
+            "金鼎资源",
+            "金鼎资源",
+            "金鼎资源",
+            "金鼎资源"
+          ],
+          "correct": [
+            true,
+            true,
+            true,
+            true
+          ]
+        },
+        "ag-cnt-锂矿": {
+          "gold": 16,
+          "answers": [
+            16,
+            15,
+            16,
+            16
+          ],
+          "correct": [
+            true,
+            false,
+            true,
+            true
+          ]
+        }
+      }
+    },
+    "view": {
+      "runs": 4,
+      "accuracy_per_run": [
+        0.9167,
+        0.9167,
+        1.0,
+        0.6667
+      ],
+      "accuracy_mean": 0.875,
+      "accuracy_min": 0.6667,
+      "accuracy_max": 1.0,
+      "questions_always_right": 8,
+      "questions_flaky": 4,
+      "questions_always_wrong": 0,
+      "extra_usd": 0.02872,
+      "per_question": {
+        "ag-max-农产品": {
+          "gold": "永北农业",
+          "answers": [
+            "永北农业",
+            "永北农业",
+            "永北农业",
+            "兴瑞粮业"
+          ],
+          "correct": [
+            true,
+            true,
+            true,
+            false
+          ]
+        },
+        "ag-cnt-农产品": {
+          "gold": 16,
+          "answers": [
+            15,
+            16,
+            16,
+            15
+          ],
+          "correct": [
+            false,
+            true,
+            true,
+            false
+          ]
+        },
+        "ag-max-动力电池": {
+          "gold": "安润储能",
+          "answers": [
+            "安润储能",
+            "安润储能",
+            "安润储能",
+            "安润储能"
+          ],
+          "correct": [
+            true,
+            true,
+            true,
+            true
+          ]
+        },
+        "ag-cnt-动力电池": {
+          "gold": 15,
+          "answers": [
+            15,
+            15,
+            15,
+            15
+          ],
+          "correct": [
+            true,
+            true,
+            true,
+            true
+          ]
+        },
+        "ag-max-包装材料": {
+          "gold": "华新印务",
+          "answers": [
+            "华新印务",
+            "华新印务",
+            "华新印务",
+            "华新印务"
+          ],
+          "correct": [
+            true,
+            true,
+            true,
+            true
+          ]
+        },
+        "ag-cnt-包装材料": {
+          "gold": 15,
+          "answers": [
+            15,
+            15,
+            15,
+            15
+          ],
+          "correct": [
+            true,
+            true,
+            true,
+            true
+          ]
+        },
+        "ag-max-正极材料": {
+          "gold": "瑞中材料",
+          "answers": [
+            "瑞中材料",
+            "瑞中材料",
+            "瑞中材料",
+            "瑞中材料"
+          ],
+          "correct": [
+            true,
+            true,
+            true,
+            true
+          ]
+        },
+        "ag-cnt-正极材料": {
+          "gold": 17,
+          "answers": [
+            17,
+            17,
+            17,
+            16
+          ],
+          "correct": [
+            true,
+            true,
+            true,
+            false
+          ]
+        },
+        "ag-max-白酒": {
+          "gold": "鑫康酒厂",
+          "answers": [
+            "鑫康酒厂",
+            "鑫康酒厂",
+            "鑫康酒厂",
+            "鑫康酒厂"
+          ],
+          "correct": [
+            true,
+            true,
+            true,
+            true
+          ]
+        },
+        "ag-cnt-白酒": {
+          "gold": 15,
+          "answers": [
+            15,
+            15,
+            15,
+            15
+          ],
+          "correct": [
+            true,
+            true,
+            true,
+            true
+          ]
+        },
+        "ag-max-锂矿": {
+          "gold": "金鼎资源",
+          "answers": [
+            "金鼎资源",
+            "金鼎资源",
+            "金鼎资源",
+            "金鼎资源"
+          ],
+          "correct": [
+            true,
+            true,
+            true,
+            true
+          ]
+        },
+        "ag-cnt-锂矿": {
+          "gold": 16,
+          "answers": [
+            16,
+            15,
+            16,
+            15
+          ],
+          "correct": [
+            true,
+            false,
+            true,
+            false
+          ]
+        }
+      }
+    }
+  }
+}

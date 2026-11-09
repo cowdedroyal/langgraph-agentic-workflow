@@ -1,0 +1,54 @@
+{
+  "model": "deepseek-v4.1-flash",
+  "size": 180,
+  "max_tokens": 16384,
+  "n_wrong_at_4096": 3,
+  "fixed": 2,
+  "rows": [
+    {
+      "qid": "ag-cnt-动力电池",
+      "gold": 15,
+      "at_4096": {
+        "answer": null,
+        "completion": 4096,
+        "correct": false
+      },
+      "at_16384": {
+        "answer": 15,
+        "completion": 2916,
+        "finish": "stop",
+        "correct": true
+      }
+    },
+    {
+      "qid": "ag-cnt-正极材料",
+      "gold": 17,
+      "at_4096": {
+        "answer": 16,
+        "completion": 2822,
+        "correct": false
+      },
+      "at_16384": {
+        "answer": 17,
+        "completion": 3077,
+        "finish": "stop",
+        "correct": true
+      }
+    },
+    {
+      "qid": "ag-cnt-白酒",
+      "gold": 15,
+      "at_4096": {
+        "answer": null,
+        "completion": 4096,
+        "correct": false
+      },
+      "at_16384": {
+        "answer": 14,
+        "completion": 2270,
+        "finish": "stop",
+        "correct": false
+      }
+    }
+  ]
+}

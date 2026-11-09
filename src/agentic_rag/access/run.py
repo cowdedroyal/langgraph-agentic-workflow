@@ -3,9 +3,11 @@
 For each corpus size (number of distractor companies) it builds the world, the questions
 and every requested path, answers all questions, grades them, and writes:
 
-  outputs/access/<size>/records.jsonl   one line per (path, question)
-  outputs/access/summary.json           aggregate per (size, path) and per hop type
-  docs/metrics/access_paths.md          the table that the README cites
+  outputs/access/<tag>/<size>/records_<path>.jsonl   one line per question
+  outputs/access/<tag>/summary.json     aggregate per (size, path) and per hop type
+  docs/metrics/access_paths_<tag>.md    the table that the README cites (+ summary JSON)
+
+<tag> defaults to the model name, so results from different models never mix.
 
 LLM responses are cached under ``outputs/access/cache`` so a re-run is free.
 """
@@ -14,15 +16,16 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 import time
 from collections import defaultdict
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
 from .grade import grade
-from .llm import LLM, Usage
-from .paths import AgentPath, IndexJoinPath, IndexPath, ScanPath, ViewPath
-from .questions import build_questions
+from .llm import LLM, MODEL, Usage
+from .paths import AgentPath, IndexJoinPath, IndexPath, LazyViewPath, ScanPath, ViewPath, ViewSQLPath
+from .questions import build_oos_questions, build_questions
 from .retrieval import DocSearch, HybridIndex, chunk_docs
 from .world import build_world, render_corpus
 
@@ -48,6 +51,20 @@ def _run_path(path, questions, workers: int, sequential: bool):
             first = one(questions[0])
             return [first] + list(ex.map(one, questions[1:]))
         return list(ex.map(one, questions))
+
+
+def _save(summary_path: Path, summary: dict, size: str, name: str | None) -> None:
+    """Re-read the file and update only this (size, path) so parallel runs do not clobber."""
+    disk = json.loads(summary_path.read_text()) if summary_path.exists() else {}
+    for k, v in summary.items():
+        if k == size:
+            e = disk.setdefault(k, {kk: vv for kk, vv in v.items() if kk != "paths"})
+            e.setdefault("paths", {})
+            if name:
+                e["paths"][name] = v["paths"][name]
+        else:
+            disk.setdefault(k, v)
+    summary_path.write_text(json.dumps(disk, ensure_ascii=False, indent=2))
 
 
 def summarize(records: list[dict], build: Usage | None = None) -> dict:
@@ -86,23 +103,39 @@ def main(argv=None):
     ap.add_argument("--topk", type=int, default=8)
     ap.add_argument("--model", default=None)
     ap.add_argument("--context-limit", type=int, default=1_000_000)
+    ap.add_argument("--tag", default=None,
+                    help="results go to outputs/access/<tag>/ and docs/metrics/access_paths_<tag>.md "
+                         "(default: derived from the model name, so runs on different models never mix)")
+    ap.add_argument("--qset", choices=["base", "oos"], default="base",
+                    help="base: the 63 questions the view schema was designed for; "
+                         "oos: 52 questions whose answers are outside that schema (tag gets an -oos suffix)")
+    ap.add_argument("--hops", nargs="*", default=None,
+                    help="only these hop types (e.g. view_lazy is only reached by uncovered join/aggregate)")
     args = ap.parse_args(argv)
 
-    llm = LLM(model=args.model, cache_dir=OUT / "cache") if args.model else LLM(cache_dir=OUT / "cache")
-    summary_path = OUT / "summary.json"
+    model = args.model or MODEL
+    tag = (args.tag or model_tag(model)) + ("-oos" if args.qset == "oos" else "")
+    llm = LLM(model=model, cache_dir=OUT / "cache")  # cache key includes the model, so sharing is safe
+    out = OUT / tag
+    out.mkdir(parents=True, exist_ok=True)
+    summary_path = out / "summary.json"
     summary = json.loads(summary_path.read_text()) if summary_path.exists() else {}
 
     for size in args.sizes:
         sw = build_world(size)
         docs = render_corpus(sw)
-        qs = build_questions(sw)
+        qs = build_questions(sw) if args.qset == "base" else build_oos_questions(sw)
+        if args.hops:
+            qs = [q for q in qs if q.hop_type in args.hops]
         if args.limit:
             qs = qs[: args.limit]
         chars = sum(len(d.text) for d in docs)
         print(f"\n=== size={size} companies={len(sw.world.companies)} docs={len(docs)} chars={chars} questions={len(qs)}")
-        d = OUT / str(size)
+        d = out / str(size)
         d.mkdir(parents=True, exist_ok=True)
-        (d / "questions.jsonl").write_text("\n".join(json.dumps(q.to_dict(), ensure_ascii=False) for q in qs))
+        if not args.hops and not args.limit:
+            (d / "questions.jsonl").write_text("\n".join(json.dumps(q.to_dict(), ensure_ascii=False) for q in qs))
+        summary.setdefault("_meta", {"model": model_tag(model), "tag": tag})
         entry = summary.setdefault(str(size), {"companies": len(sw.world.companies), "docs": len(docs),
                                                  "chars": chars, "paths": {}})
         index = None
@@ -116,7 +149,7 @@ def main(argv=None):
                     entry["paths"][name] = {"infeasible": True,
                                             "reason": f"corpus ~{est} tokens > context {args.context_limit}"}
                     print(f"  scan   infeasible: corpus ~{est} tokens")
-                    summary_path.write_text(json.dumps(summary, ensure_ascii=False, indent=2))
+                    _save(summary_path, summary, str(size), name)
                     continue
                 path, seq = ScanPath(llm, docs), True
             elif name in ("index", "index_join"):
@@ -124,8 +157,9 @@ def main(argv=None):
                     index = HybridIndex(chunk_docs(docs), OUT / "emb")
                 cls = IndexPath if name == "index" else IndexJoinPath
                 path, seq = cls(llm, index, args.topk), False
-            elif name == "view":
-                path, seq = ViewPath(llm, docs, workers=args.workers * 2), True
+            elif name in ("view", "view_sql", "view_lazy"):
+                cls = {"view": ViewPath, "view_sql": ViewSQLPath, "view_lazy": LazyViewPath}[name]
+                path, seq = cls(llm, docs, workers=args.workers * 2), name == "view"
                 build = path.build_usage
                 (d / "view_table.txt").write_text(path.table)
                 print(f"  view: {path.n_rows} rows, {path.failed} failed extractions, build ${build.usd:.4f}")
@@ -143,21 +177,33 @@ def main(argv=None):
             print(f"  {name:6s} acc={s['accuracy']:.3f} ${s['usd_per_q']:.5f}/q "
                   f"prompt={s['prompt_tokens_per_q']} hit={s['cache_hit_rate']:.2f} p50={s['p50_latency_s']}s "
                   f"err={s['errors']} {s['per_hop']}")
-            summary_path.write_text(json.dumps(summary, ensure_ascii=False, indent=2))
-    write_table(summary)
+            _save(summary_path, summary, str(size), name)
+    write_table(json.loads(summary_path.read_text()), tag)
 
 
-def write_table(summary: dict) -> None:
-    hops = ["cross_year", "metric_change", "supply_chain", "deep_chain", "aggregate"]
+def model_tag(model: str) -> str:
+    """gateway/provider/claude-deepseek-v4.1-flash[1m] -> deepseek-v4.1-flash. Committed result
+    files record only this tag: a raw model id can carry gateway or provider names."""
+    name = model.split("/")[-1]
+    name = re.sub(r"\[.*?\]$", "", name)
+    return re.sub(r"^claude-(?=deepseek)", "", name)
+
+
+def write_table(summary: dict, tag: str) -> None:
+    model = summary.get("_meta", {}).get("model", tag)
+    from .questions import OOS_HOPS
+    hops = (list(OOS_HOPS) if tag.endswith("-oos")
+            else ["cross_year", "metric_change", "supply_chain", "deep_chain", "aggregate"])
     lines = ["# Access paths for multi-hop financial QA", "",
-             "Generated by `python -m agentic_rag.access.run`. Model: deepseek-v4-flash, temperature 0. "
-             "Cost uses list prices (input miss $0.15/M, cache hit $0.003/M, output $0.6/M).", "",
+             f"Generated by `python -m agentic_rag.access.run --tag {tag}`. Model: `{model_tag(model)}`, temperature 0. "
+             "Cost uses deepseek-v4-flash list prices (input miss $0.15/M, cache hit $0.003/M, output $0.6/M) "
+             "for every model, so rows are comparable; it is not the bill of the gateway used.", "",
              "| distractors | companies | corpus chars | path | accuracy | " + " | ".join(hops)
              + " | prompt tok/q | cache hit | $/q | $/q incl. build | p50 s |",
              "|---|---|---|---|---|" + "---|" * len(hops) + "---|---|---|---|---|"]
-    for size in sorted(summary, key=int):
+    for size in sorted((k for k in summary if not k.startswith("_")), key=int):
         e = summary[size]
-        for name in ("scan", "index", "index_join", "view", "agent"):
+        for name in ("scan", "index", "index_join", "view", "view_sql", "view_lazy", "agent"):
             s = e["paths"].get(name)
             if not s:
                 continue
@@ -169,8 +215,10 @@ def write_table(summary: dict) -> None:
             lines.append(f"| {size} | {e['companies']} | {e['chars']} | {name} | {s['accuracy']:.3f} | {ph} | "
                          f"{s['prompt_tokens_per_q']} | {s['cache_hit_rate']:.2f} | {s['usd_per_q']:.5f} | "
                          f"{s.get('usd_per_q_amortized', s['usd_per_q']):.5f} | {s['p50_latency_s']} |")
-    p = ROOT / "docs" / "metrics" / "access_paths.md"
+    p = ROOT / "docs" / "metrics" / f"access_paths_{tag}.md"
     p.write_text("\n".join(lines) + "\n")
+    (ROOT / "docs" / "metrics" / f"access_paths_summary_{tag}.json").write_text(
+        json.dumps(summary, ensure_ascii=False, indent=2))
     print(f"\nwrote {p}")
 
 
